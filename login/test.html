@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+
+</body>
+</html>
+
+<script>
+var box = {
+
+    width:3,
+    height:3,//单体的变量
+    getArea:function(){
+            return this.width*this.height;//中的,width，height其实并不是单体的变量，而是在init中定义的全局变量
+    },
+    init:function(w,h){
+          width = w;
+          height = h;
+    }
+}//init中width，height其实并不是单体的变量
+window.onload = function(){
+    width = 2;
+    height = 2;
+    alert(width);
+    var width = box.getArea();
+    alert(width);
+}
+
+
+
+</script>
+<script src="./libs/CryptoJS/rollups/md5.js"></script>
+<script src="./libs/CryptoJS/rollups/aes.js"></script>
+<script src="./libs/CryptoJS/components/pad-zeropadding.js"></script>
+<script src="./libs/CryptoJS/components/enc-base64.js"></script>
+<script src="./libs/jctlibs/function.js"></script>
+<script src="./libs/jctlibs/base64.js"></script>
+
+
+
+<script>
+
+
+
+    var keyHash = CryptoJS.MD5('13321162172');
+    var key=keyHash.toString();
+    var data='johnxue@163.com';
+    var iv=randomKey(16);
+
+    document.write(data.length);
+    document.write('<br/>');
+
+    document.write('iv='+iv);
+    document.write('<br/>');
+
+    b=new Base64();
+    var str = b.encode("admin:admin");
+    document.write("base64 encode:" + str);
+    document.write('<br/>');
+    str = b.decode(str);
+    document.write("base64 decode:" + str);
+    document.write('<br/>');
+
+
+
+    var key = CryptoJS.enc.Utf8.parse(key);
+    var iv  = CryptoJS.enc.Utf8.parse(iv);
+
+    //var key  = CryptoJS.enc.Hex.parse(key);
+    //var iv   = CryptoJS.enc.Hex.parse(iv);
+
+    var encrypted = CryptoJS.AES.encrypt(data,key,{iv:iv,mode:CryptoJS.mode.CBC,padding:CryptoJS.pad.ZeroPadding});
+
+    document.write(ZeroPadding.left('A',3));
+    document.write('<br/>')
+
+
+    document.write('keyHash='+keyHash);
+    document.write('<br/>')
+    document.write('ciphertext='+encrypted.ciphertext);
+    document.write('<br/>');
+    document.write('key='+encrypted.key);
+    document.write('<br/>');
+    document.write('iv='+encrypted.iv);
+    document.write('<br/>');
+    document.write('salt='+encrypted.salt);
+    document.write('<br/>');
+    document.write('encrypted='+encrypted);
+    document.write('<br/>');
+
+    //解密
+    var decrypted = CryptoJS.AES.decrypt(encrypted,key,{iv:iv,padding:CryptoJS.pad.ZeroPadding});
+    console.log(decrypted.toString(CryptoJS.enc.Utf8));
+
+
+    //document.writeln('C='+CryptoJS.enc.Hex.parse(keyHash)+'<br>');
+
+</script>

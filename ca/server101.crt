@@ -1,0 +1,63 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 0 (0x0)
+    Signature Algorithm: sha1WithRSAEncryption
+        Issuer: C=CN, ST=NO.170 Bei Yuan Road,Chao Yang District, L=Beijing, O=Jet Cloud Technologies Co., Ltd., OU=Technical, CN=192.168.1.101
+        Validity
+            Not Before: Jun 17 04:19:19 2014 GMT
+            Not After : Jun 16 04:19:19 2017 GMT
+        Subject: C=CN, ST=NO.170 Bei Yuan Road,Chao Yang District, O=Jet Cloud Technologies Co., Ltd., OU=Technical, CN=192.168.1.101
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (1024 bit)
+                Modulus:
+                    00:e0:eb:86:bf:5c:d9:1c:89:a1:57:8c:79:7f:2f:
+                    b3:00:f4:88:cd:46:9a:55:2b:14:29:ad:58:e1:63:
+                    c6:38:c4:52:96:2e:40:5a:a8:65:f0:ae:6f:3d:27:
+                    28:f0:8b:75:cb:58:db:5f:a8:64:15:20:ed:6b:4c:
+                    66:cc:62:fe:f6:c2:5f:f0:9c:a0:be:bf:f8:98:5c:
+                    85:2d:1b:48:2b:b3:5a:37:9d:f4:31:11:7b:0a:ac:
+                    38:d0:aa:b5:ca:70:4a:33:7b:a3:24:00:73:ad:77:
+                    c1:c4:de:1a:16:33:d1:9a:e8:a5:18:54:1b:0b:15:
+                    bb:28:a3:ad:53:47:aa:97:05
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier: 
+                ED:E6:9F:C1:00:79:F9:94:D5:7C:93:07:0B:50:F7:EB:CA:9A:78:A7
+            X509v3 Authority Key Identifier: 
+                keyid:E7:44:78:B5:AF:81:09:CE:F9:1C:FF:6B:2D:C8:E5:9B:17:84:68:27
+
+    Signature Algorithm: sha1WithRSAEncryption
+         b3:a1:41:cb:f3:ac:cc:ac:a9:78:7d:69:f5:c7:9d:5f:3c:99:
+         68:0c:36:fa:a1:ce:66:4c:1d:70:e8:89:ce:9a:09:86:41:49:
+         36:a8:81:a8:be:d3:32:1d:ea:f2:f9:f9:68:21:b7:42:37:5c:
+         9c:7a:60:45:a5:46:9e:61:31:1f:19:33:67:d5:20:a5:d4:b8:
+         f0:d8:66:5d:ee:62:39:cc:ea:0a:55:7e:15:3b:e8:c7:b0:8d:
+         bf:11:b1:b0:52:e6:07:46:02:37:58:73:7f:db:e9:d2:fb:29:
+         92:63:46:2f:a9:d6:50:38:bc:09:08:ed:20:58:37:18:d2:61:
+         50:27
+-----BEGIN CERTIFICATE-----
+MIIDMTCCApqgAwIBAgIBADANBgkqhkiG9w0BAQUFADCBqDELMAkGA1UEBhMCQ04x
+MDAuBgNVBAgMJ05PLjE3MCBCZWkgWXVhbiBSb2FkLENoYW8gWWFuZyBEaXN0cmlj
+dDEQMA4GA1UEBwwHQmVpamluZzEpMCcGA1UECgwgSmV0IENsb3VkIFRlY2hub2xv
+Z2llcyBDby4sIEx0ZC4xEjAQBgNVBAsMCVRlY2huaWNhbDEWMBQGA1UEAwwNMTky
+LjE2OC4xLjEwMTAeFw0xNDA2MTcwNDE5MTlaFw0xNzA2MTYwNDE5MTlaMIGWMQsw
+CQYDVQQGEwJDTjEwMC4GA1UECAwnTk8uMTcwIEJlaSBZdWFuIFJvYWQsQ2hhbyBZ
+YW5nIERpc3RyaWN0MSkwJwYDVQQKDCBKZXQgQ2xvdWQgVGVjaG5vbG9naWVzIENv
+LiwgTHRkLjESMBAGA1UECwwJVGVjaG5pY2FsMRYwFAYDVQQDDA0xOTIuMTY4LjEu
+MTAxMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDg64a/XNkciaFXjHl/L7MA
+9IjNRppVKxQprVjhY8Y4xFKWLkBaqGXwrm89Jyjwi3XLWNtfqGQVIO1rTGbMYv72
+wl/wnKC+v/iYXIUtG0grs1o3nfQxEXsKrDjQqrXKcEoze6MkAHOtd8HE3hoWM9Ga
+6KUYVBsLFbsoo61TR6qXBQIDAQABo3sweTAJBgNVHRMEAjAAMCwGCWCGSAGG+EIB
+DQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQU7eaf
+wQB5+ZTVfJMHC1D368qaeKcwHwYDVR0jBBgwFoAU50R4ta+BCc75HP9rLcjlmxeE
+aCcwDQYJKoZIhvcNAQEFBQADgYEAs6FBy/OszKypeH1p9cedXzyZaAw2+qHOZkwd
+cOiJzpoJhkFJNqiBqL7TMh3q8vn5aCG3QjdcnHpgRaVGnmExHxkzZ9UgpdS48Nhm
+Xe5iOczqClV+FTvox7CNvxGxsFLmB0YCN1hzf9vp0vspkmNGL6nWUDi8CQjtIFg3
+GNJhUCc=
+-----END CERTIFICATE-----
