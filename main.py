@@ -28,7 +28,9 @@ import News.list
 import News.detail
 
 import ShoppingCart.list
+
 import Order.list
+import Order.attribute
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -62,6 +64,8 @@ application = tornado.web.Application([
     (r"/o2b/v1.0.0/shoppingcart", ShoppingCart.list.info),
     
     (r"/o2b/v1.0.0/order", Order.list.info),
+    (r"/o2b/v1.0.0/order/attribute", Order.attribute.info),
+    
 
     (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
 

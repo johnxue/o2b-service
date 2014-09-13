@@ -60,6 +60,7 @@ class info(tornado.web.RequestHandler):
         rowcount=self.get_argument("r",default='1000')
         startDate=self.get_argument("s",default=None)
         endDate=self.get_argument("e",default=None)
+        orderStatus=self.get_argument("t",default=None)
         
         if ((startDate is None) and (endDate is None)) :
             while_Date=' '

@@ -1,0 +1,555 @@
+预售平台核心URI V0.5.8
+===========================
+
+# 最后一次更新时间：2014.9.13
+
+1. 概述(略)
+2. 开发环境说明
+2.1 Mysql 环境说明:
+    ip/port: 192.168.1.210:3306
+    数据库名：o2b
+    开发用账号：root/123456
+
+2.2 Redis 说明：
+    ip/prot: 192.168.1.210:6375
+    数据库：12
+    密码：jct2014redis
+
+2.3 Key & Secret 说明
+    App_Key=fb98ab9159f51fd0
+    App_Secret=09f7c8cba635f7616bc131b0d8e25947
+    app_key放置在每一个http请求的header（app_key）中，每一个URI必须要验证app_key的合法性；
+    app_secret只用于登录验证，放在登录请求的header(app_secret)中。
+
+3. 错误码说明 (持续更新中...)
+   错误码用于URI的错误信息返回，其中code是业务层级的定议，status为http对应的status,message是错误说明，help_document是错误说明指引URI
+   其中：
+   code = 600-699 -->  鉴权类错误
+   code = 700-799 -->  数据库类错误
+   code = 800-899 -->  业务类错误
+   code = 900     -->  未被定义的错误类型
+
+   具体错误代码定义如下：
+
+   errorDic={
+            900 : {
+                "code": "900",
+                "status": 500,
+                "message": "未被定义的错误类型",
+                "help_document": "/oauth/v1.0.0/help/900"
+            },
+            601: {
+                "code": "601",
+                "status":401,
+                "message": "未经过JctOAuth授权的第三方应用",
+                "help_document": "/oauth/v1.0.0/help/601"
+            },
+            602: {
+                "code": "602",
+                "status":401,
+                "message": "未登录授权的应用",
+                "help_document": "/oauth/v1.0.0/help/602"
+            },
+            603: {
+                "code": "603",
+                "status":404,
+                "message": "无法识别的用户名或密码",
+                "help_document": "/oauth/v1.0.0/help/603"
+            },                  
+            701: {
+                  "code": "701",
+                  "status":500,
+                  "message": "数据库连接失败",
+                  "help_document": "/oauth/v1.0.0/help/701"
+            },
+            702: {
+                  "code": "702",
+                  "status":500,
+                  "message":"SQL语句执行失败",
+                  "help_document":"/oauth/v1.0.0/help/702"
+            },
+            801: {
+                  "code": "801",
+                  "status":404,
+                  "message":"没有找到数据",
+                  "help_document":"/o2b/v1.0.0/help/801"
+            }
+        }
+
+4. URI说明
+4.1. 获得查询条件：
+    URI: https://192.168.1.210/o2b/v1.0.0/product/attribute 
+    输出：
+              {
+                 "attribute": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "sort"     : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+              }
+ 
+
+4.2. 获得产品列表
+  URI: https://192.168.1.210/o2b/v1.0.0/product
+  输入：
+  o = 起始页                  [可选]
+  r = 每页行数                [可选]
+  s =attribute|category|sort  [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
+  v =排序条件                  [可选，取值根据 /o2b/v1.0.0/product/attribute json的value值]
+  q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
+  输出：
+              {
+                 product : [$pid,$code,$categoryCode,$name,$image,$createTime,$updateTime,$starttime,$statusCode,$status,
+                            $totalTopic,$totalFollow,$totalSold,$totalAmount],...]
+              }
+
+  例1： 输出所有产品列表（默认只显示前1000条记录）
+  https://192.168.1.210/o2b/v1.0.0/product
+
+  例2： 输出第2页，共50项产品列表 
+  https://192.168.1.210/o2b/v1.0.0/product?o=1&r=50
+
+  例3： 输出最新上互产品，第1页，共20项产品列表,
+  https://192.168.1.210/o2b/v1.0.0/product?o=0&r=20&s=sort&v=updatetime
+
+  例4： 查询所有与“睡眠”和“灯”有关的产品
+  https://192.168.1.210/o2b/v1.0.0/product?o=0&r=20&q=睡眠+灯
+
+4.3. 获得详细产品信息
+   URI: https://192.168.1.210/o2b/v1.0.0/product/123456
+   
+   输出：
+              {
+                 'pid' : '123456',
+                 ...
+                 html : 'html...'
+              }
+
+4.4. 获得N级页面告信息
+   URI: https://192.168.1.210/o2b/v1.0.0/adSense/$channel/$n
+
+   输出：
+              {
+		ads_level_01:[[$code,$image],...],
+                ads_level_02:[$code,$name,$description,$imagelarge,$starttime,$status,
+                              $totalTopic,$totalFollow,$totalSold,$totalAmount],...]
+              }
+
+   例1：获得主页面1级页面广告
+   URI: https://192.168.1.210/o2b/v1.0.0/adSense/main/1
+
+   例2：获得产品频道二级页面广告
+   URI: https://192.168.1.210/o2b/v1.0.0/adSense/product/2
+
+   例3：获得圈子频道三级页面广告
+   URI: https://192.168.1.210/o2b/v1.0.0/adSense/groups/3
+
+4.5. 登录认证
+URI: https://192.168.1.210/o2b/v1.0.0/login/$url/$dataPacket
+输入：
+      http header：app_secret
+      url: 必填 - 即网站URL，从浏览器地址栏中获得
+      dataPacket:必填，通过加密算法获得
+输出：
+
+     http header：Authorization [token]
+    {
+      登录后需要返回的信息，目前还没有想好
+    }
+
+4.6. 登出
+URI: https://192.168.1.210/o2b/v1.0.0/logout
+注：$userid从Token中获得
+输入：
+     方法:Delete
+     http header：Authorization
+
+输出：http status : 204 操作成功，无返回
+      无
+
+4.6.1 心跳
+URI: https://192.168.1.210/o2b/v1.0.0/logout
+注：$userid从Token中获得
+输入：
+     方法:Delete
+     http header：Authorization
+
+输出：http status : 201 操作成功
+返回:1800,即token时效秒数
+
+4.7. 产品关注
+URI: https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow
+
+4.7.1 用户关注产品
+输入：
+     http header：Authorization
+     方法:POST
+     参数:
+     follow=$uid    [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+输出：http status : 201
+     {
+       'code': 'xxxx'
+       'follow': xxxx
+     }
+
+
+4.7.2. 用户取消关注产品
+输入：
+     http header：Authorization
+     方法:DELETE 
+     参数:
+     unfollow=$uid    [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+输出： http status : 201
+     {
+       'code': 'xxxx'   #产品编号
+       'follow': xxxx   #关注数
+     }
+
+4.7.3. 某一产品当前用户是否关注
+URI: https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+     $uid    [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+输出： http status : 200
+     {
+       'code'  : 'xxxx'        #产品编号
+       'follow': xxxx          #关注数
+       '$user' : 'YES'|'NO'    #关注为YES,NO为未关注
+     }
+
+
+4.10 得到地区列表
+URI: https://192.168.1.210/o2b/v1.0.0/area
+输入：
+     方法:GET
+     参数：[s|p|c|d]
+            s = 国家                    [可选]
+            p = 省                      [可选]
+            c = 城市                    [可选]
+            d = 区县                    [可选]
+输出：
+              {
+                 'province|city|district' : [$area_id,$area_name],[$area_id,$area_name]...[$area_id,$area_name]]
+              }
+  注：area_id   = 编号
+      area_name = 地区名称 
+
+
+例1：得到国内的所有省
+https://192.168.1.210/o2b/v1.0.0/area
+
+例2：得到国内某省下面的所有市
+https://192.168.1.210/o2b/v1.0.0/area?p=130000
+
+例3：得到国内某市下面的所有区/县
+https://192.168.1.210/o2b/v1.0.0/area?c=131000
+
+
+4.11. 得到用户的所有地址
+URI: https://192.168.1.210/o2b/v1.0.0/address
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+     {
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+     }
+          
+输出：
+    {
+       user: 'xxxxx',
+       address : [ [$id,$user,$contact,$tel,$mobile,$email,$province,$city,$area,$street,$address,$isDefault],
+                   [list]
+                   ..
+                   [list]
+                 ]
+    }
+注：id - 地址Id
+    user      - 用户名
+    contact   - 联系人
+    tel       - 电话
+    mobile    - 手机
+    email     -  邮件
+    province  - 省
+    city      - 市
+    area      - 县/区
+    street    - 街道
+    address   -  地址
+    isDefault - 是否是默认地址
+
+
+4.12. 添加新地址
+URI: https://192.168.1.210/o2b/v1.0.0/address
+输入：
+     http header：Authorization
+     方法:POST 
+     参数:
+     {
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+          c,            # contact - 联系人，不能为空
+          t,            # tel - 固定电话
+          m,            # mobile -联系人手机，不能为空
+          e,            # email - 联系人邮箱
+          pi            # provinceId - 省id，不能为空
+          ci,           # cityId - 市id, 不能为空
+          ai,           # areaId - 区/县id , 不能为空
+          s ,           # street - 街道 
+          a ,           # address - 详细地址
+          z ,           # zipcode - 邮政编码
+          i ,           # isDefault - 是否是默认地址,默认值为N
+     }
+          
+
+输出：http status : 201
+     {
+       'user':    'xxxx',
+       'address' : id     # 地址id
+     }
+
+
+4.13. 删除地址
+URI: https://192.168.1.210/o2b/v1.0.0/address/$id
+输入：
+     http header：Authorization
+     方法:DELETE
+     参数:
+     {
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+     }
+          
+输出：http status : 204 操作成功，无返回
+      无
+
+
+4.13. 设置默认地址
+URI: https://192.168.1.210/o2b/v1.0.0/address/$id
+输入：http status : 204
+     http header：Authorization
+     方法:patch
+     参数:
+     {
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+     }
+          
+输出：http status : 204 操作成功，无返回
+
+
+4.14. 得到某用户的购物车
+URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
+输入：
+     http header：Authorization
+     方法:GET
+          
+输出：
+    {
+       user         : 'xxxxx',
+       shoppingcart : [ 
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$offline],
+                        ...
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$offline]
+                      ]
+    }
+
+4.14. 加入购物车
+URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
+输入：
+     http header：Authorization
+     方法:POST
+     参数:
+     {
+	pid,pcode,number
+     }
+          
+输出：
+    {
+       user: 'xxxxx',
+       address : [ [list],[list]..[list] ]
+    }
+
+
+4.15. 更改购物车数量
+URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
+输入：
+     http header：Authorization
+     方法:patch
+     patch json 对象:{id,number}
+注： id     - 购物车id
+     number - 定购数量
+例： https://192.168.1.210/o2b/v1.0.0/shoppingcart
+     patch数据：
+     {
+       "id" : 18,
+       "number" : 1
+     }
+
+输出：http status : 204 操作成功，无返回
+
+4.16. 删除购物车商品
+URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
+输入：
+     http header：Authorization
+     方法:delete
+     参数:
+     {
+	"ids":"$id1,$id2,$id3,....,$idn"
+     }
+输出：http status : 204 操作成功，无返回
+
+
+4.17. 结算-生成定单
+URI: https://192.168.1.210/o2b/v1.0.0/order
+输入：
+     http header：Authorization
+     方法:post
+     参数:
+     {
+	"user" : "xxxx",
+        "aId"  : 00,
+        "payment":"00",
+        "shipping": "00",
+        "freight" : 0,
+        "total" :0,
+        "amount":0,
+        "comment":"xxxxx"
+	"order" : {
+              [{pid,pcode,name,Price,oPrice,number}],
+              ...
+              [{pid,pcode,name,Price,oPrice,number}]
+        }
+      }
+
+注:  user         - 用户 ,
+     aId          - 地址id ,
+     payment      - 付款方式id
+     pid          - 产品id
+     pcode        - 产品编码
+     name         - 产品名称
+     Price        - 当前价格
+     OPrice       - 原价
+     shipping     - 运送方式
+     freight      - 运费,
+     number       - 数量
+     total        - 总数
+     amount       - 总金额
+     comment      - 备注
+     
+
+输出：http status : 201 操作成功
+    {
+       "user"    : "用户名",
+       "orderId" : 订单id，
+       "orderNo" : 订单号，
+       "amount"  : 总金额，
+       "payment" : 付款方式id 
+    }
+
+
+4.18. 查看定单例表
+URI: https://192.168.1.210/o2b/v1.0.0/order
+输入：
+     http header：Authorization
+     方法:get
+
+    o = 起始页                  [可选]
+    r = 每页行数                [可选]
+    s = 查询项目                [可选, status|...| ... ]
+    v = 查询条件                [可选，取值根据 /o2b/v1.0.0/order/status json的code值]
+    q =模糊查询条件             [可选，多查询关键字用 "+" 隔开]
+输出：http status : 200
+{
+    "User": "用户名",
+    "OrderList": [
+        [$id,$orderNo,$orderDate,$contact,$total,$amount,$payment,$status],
+        ...
+     ]
+}
+
+
+4.19. 查看定单详情
+URI: https://192.168.1.210/o2b/v1.0.0/order
+输入：
+     http header：Authorization
+     方法:delete
+     参数:
+     {
+	"ids":"$id1,$id2,$id3,....,$idn"
+     }
+输出：http status : 204 操作成功，无返回
+
+
+4.20. 取消定单
+URI: https://192.168.1.210/o2b/v1.0.0/order
+输入：
+     http header：Authorization
+     方法:delete
+     参数:
+     {
+	"ids":"$id1,$id2,$id3,....,$idn"
+     }
+输出：http status : 204 操作成功，无返回
+
+
+4.21. 定单跟踪
+URI: https://192.168.1.210/o2b/v1.0.0/order
+输入：
+     http header：Authorization
+     方法:delete
+     参数:
+     {
+	"ids":"$id1,$id2,$id3,....,$idn"
+     }
+输出：http status : 204 操作成功，无返回
+
+
+4.22 获得配送方式、支付方式
+URI: https://192.168.1.210/o2b/v1.0.0/order/attribute
+输入：
+     http header：Authorization
+     方法:get
+输出：
+              {
+                 "Payment": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "Delivery" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+              }
+注：Payment - 配送方式
+   Delivery - 配送方式
+    
+ 
+4.22. 获得新闻列表
+  URI: https://192.168.1.210/o2b/v1.0.0/news
+  输入方法： GET
+  查询参数：
+  o = 起始页                  [可选]
+  r = 每页行数                [可选]
+  输出：
+              {
+                 "news" : [
+                     [$id,$title,$author,$source,$summary,$createTime,$CTR],
+                     ...
+                 ]
+              }
+
+ 注：$id  - 新闻ID
+     $title      - 新闻标题
+     $author     - 新闻作者
+     $source     - 新闻来源
+     $summary    - 新闻摘要
+     $createTime - 时间
+     $CTR        - 点击率
+
+
+4.23. 获得新闻详情
+  URI: https://192.168.1.210/o2b/v1.0.0/news/$id
+  输入方法：GET
+  输出：
+              {
+                 "id"         ： 新闻id,
+                 "title"      : '新闻标题',
+                 "author"     : '作者',
+                 "source"     : '新闻来源',
+                 "createTime" : '时间',
+                 "htmContent" : '新闻内容',
+                 "CTR"        : '点击率'
+             }
+
+
