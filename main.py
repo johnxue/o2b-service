@@ -6,8 +6,6 @@ import tornado.web
 import logging
 import config
 
-#import User
-#import JctOAuth,Signon
 import Error
 
 import easyOAuth.login
