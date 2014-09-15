@@ -31,20 +31,22 @@ class info(tornado.web.RequestHandler):
             self.gotoErrorPage(701)
             return
         
-        row_Sort=None
-        row_Status=None
-        row_Type=None
+        rows_Payment=rows_Status=rows_Delivery=rows_Period=None
         #1. 查询产品属性
         try :
             #1.1 查询付款方式；
             sqlSelect='SELECT description,code,comment FROM tbPayment order by sort desc'
-            row_Payment=db.query(sqlSelect)
+            rows_Payment=db.query(sqlSelect)
             #1.2. 查询配送方式；
             sqlSelect='SELECT description,code,comment FROM tbDelivery order by sort desc'
-            row_Delivery=db.query(sqlSelect)
+            rows_Delivery=db.query(sqlSelect)
             #1.3. 获得时间段方式
             sqlSelect='SELECT description,code FROM vwQueryDate'
-            row_Period=db.query(sqlSelect)
+            rows_Period=db.query(sqlSelect)
+            #1.4 获得订单状态
+            sqlSelect='SELECT description,code FROM tbOrderStatus order by sort desc'
+            rows_Status=db.query(sqlSelect)            
+            
             
         except Exception as e:
              # 702 : SQL查询失败
@@ -52,16 +54,17 @@ class info(tornado.web.RequestHandler):
             return
         
         #2. 错误处理
-        if (row_Payment is None) or (row_Delivery is None) :
+        if (rows_Payment is None) or (rows_Delivery is None) or (rows_Period is None) or (rows_Status is None) :
             # '601' - 未被授权的应用
             self.gotoErrorPage(601)
             return
         
         #3. 打包成json object
         rows={
-            'payment' : row_Payment,
-            'delivery' : row_Delivery,
-            'period':row_Period
+            'payment'  : rows_Payment,
+            'delivery' : rows_Delivery,
+            'period'   : rows_Period,
+            'status'   : rows_Status
         }
         
         self.set_header('Access-Control-Allow-Origin','*')

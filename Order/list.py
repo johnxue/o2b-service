@@ -97,7 +97,7 @@ class info(tornado.web.RequestHandler):
         
         
         # 时间段查询
-        while_date=''
+        while_date=while_status=''
         if s=='period' :
             if v!='' or v!='ALL':
                 period=v
@@ -105,13 +105,19 @@ class info(tornado.web.RequestHandler):
                 row_list=db.getToObject(sqlSelect,(period,))
                 if row_list is not None :
                     while_date=row_list['while_date']
+        elif s=='status' :
+            while_status="statuscode = '%s'" % (v)
+        
         
         # 模糊查询
         
         sqlWhile=''
         
         if (len(while_date)>0):
-            sqlWhile=' and ' + while_date
+            sqlWhile+=' and ' + while_date
+        
+        if (len(while_status)>0):
+            sqlWhile+=' and '+while_status
         
         
         #1. 查询用户订单
@@ -128,8 +134,40 @@ class info(tornado.web.RequestHandler):
         rows={
             'User' : user,
             'OrderList' : rows_list
-        }              
-
+        }
+        
+        # 生成订单号集合到 ids
+        ids=''
+        if len(rows_list)>0 :
+            for  row in rows_list :
+                ids+=str(row[0])+','
+            ids+='-1'
+        
+        # 根据ids查询详单
+        obj_OD_Imgs={}
+        if len(ids)>0 :
+            #1. 根据订单ID查询用户详单
+            try :
+                sqlSelect=("SELECT oid,image,pcode,pname,number,currentPrice as Price ,amount "
+                           " FROM vwOrderDetail where oid in (%s)" % (ids) )
+                detail_list=db.query(sqlSelect)
+            except :
+                # 702 : SQL查询失败
+                self.gotoErrorPage(702)
+                return
+            
+            # 根据订单号汇总各详单中的图片文件到od
+            for  row in detail_list :
+                try : 
+                    obj_OD_Imgs[row[0]]+=','+row[1]
+                except :
+                    obj_OD_Imgs[row[0]]=row[1]
+        
+        # 拼接订单 
+        if len(rows_list)>0 :
+            for  i in range(len(rows_list)) :
+                rows_list[i]=(rows_list[i],obj_OD_Imgs[rows_list[i][0]])
+            
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Content-type','application/json;charset=utf-8');
         self.write(")]}',\n")
@@ -187,8 +225,8 @@ class info(tornado.web.RequestHandler):
             #1.1 插入 tbOrder;
             
             sqlInsert = (
-              "INSERT INTO tbOrderList (user,addressID,payment,shipping,freight,total,amount,createUser,comment,createTime,isDelete) "
-              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,now(),'N')"
+              "INSERT INTO tbOrderList (user,addressID,payment,shipping,freight,total,amount,createUser,comment,createTime,isDelete,status) "
+              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,now(),'N','110')"
             )
             
             orderId=db.save(sqlInsert,(user,aId,payment,shipping,freight,total,amount,user,comment))

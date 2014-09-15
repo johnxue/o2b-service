@@ -454,13 +454,13 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
     r = 每页行数                [可选]
     s = 查询项目                [可选, status|period| ... ]
     v = 查询条件                [可选，period的取值根据 /o2b/v1.0.0/order/attribute json的code值]
-    q =模糊查询条件             [可选，多查询关键字用 "+" 隔开]
+    q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
 
 输出：http status : 200
 {
     "User": "用户名",
     "OrderList": [
-        [$id,$orderNo,$orderDate,$contact,$total,$amount,$payment,$status],
+        [$id,$orderNo,$orderDate,$contact,$total,$amount,$payment,$status,$imgs],
         ...
      ]
 }
@@ -502,7 +502,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
 输出：http status : 204 操作成功，无返回
 
 
-4.22 获得配送方式、支付方式
+4.22 获得订单配送方式、支付方式、按日期查询的区间代码、按订单状态查询的代码 
 URI: https://192.168.1.210/o2b/v1.0.0/order/attribute
 输入：
      http header：Authorization
@@ -511,10 +511,13 @@ URI: https://192.168.1.210/o2b/v1.0.0/order/attribute
               {
                  "payment": [ ["描述","代码","说明"],["描述","代码","说明"],...["描述","代码","说明"] ], 
                  "delivery" : [ ["描述","代码","说明"],["描述","代码","说明"],...["描述","代码","说明"] ],
-		 "period":[ ["描述","代码"],["描述","代码"],...["描述","代码"] ]
+		 "period":[ ["描述","代码"],["描述","代码"],...["描述","代码"] ],
+		 "status":[ ["描述","代码"],["描述","代码"],...["描述","代码"] ]
               }
-注：Payment - 配送方式
-   Delivery - 配送方式
+注：payment - 付款方式
+   delivery - 配送方式
+   period   - 日期区间
+   status   - 订单状态 
     
  
 4.22. 获得新闻列表
