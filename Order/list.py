@@ -5,11 +5,32 @@ import json
 import decimal,datetime
 from easyOAuth.userinfo import Token
 
+class DecimalAndDateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return o.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(o, datetime.date):
+            return o.strftime('%Y-%m-%d')
+        elif isinstance(o, decimal.Decimal):
+            return float(o)
+        else :
+            return json.JSONEncoder.default(self, obj)
+        #return super(DecimalEncoder, self).default(o)    
+    
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
             return float(o)
         return super(DecimalEncoder, self).default(o)
+
+class DataTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(obj, date):
+            return obj.strftime('%Y-%m-%d')
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 class info(tornado.web.RequestHandler):
     
@@ -56,29 +77,17 @@ class info(tornado.web.RequestHandler):
             self.gotoErrorPage(602)
             return
         
-        offset=self.get_argument("o",default='0')
-        rowcount=self.get_argument("r",default='1000')
-        startDate=self.get_argument("s",default=None)
-        endDate=self.get_argument("e",default=None)
-        orderStatus=self.get_argument("t",default=None)
+        # 分页
+        offset=int(self.get_argument("o",default=0))
+        rowcount=int(self.get_argument("r",default=1000))
+        offset=offset*rowcount
         
-        if ((startDate is None) and (endDate is None)) :
-            while_Date=' '
-        elif (startDate is None) :
-            while_Date='orderData<=%s'
-        elif (endDate is None) :
-            while_Date="orderDate>=%s"
-        else :
-            while_Date='orderDate>=%s and orderData<=%s'
-            
-        
-            
-            
-            
-            
-        
+        # 查询条件 
+        s=self.get_argument("s",default='')
+        v=self.get_argument("v",default='')
         
 
+        
         try :
             db=dbMysql(config.dbConfig)
         except :
@@ -86,10 +95,29 @@ class info(tornado.web.RequestHandler):
             self.gotoErrorPage(701)
             return
         
+        
+        # 时间段查询
+        while_date=''
+        if s=='period' :
+            if v!='' or v!='ALL':
+                period=v
+                sqlSelect='SELECT while_date FROM tbQueryDate where code=%s'
+                row_list=db.getToObject(sqlSelect,(period,))
+                if row_list is not None :
+                    while_date=row_list['while_date']
+        
+        # 模糊查询
+        
+        sqlWhile=''
+        
+        if (len(while_date)>0):
+            sqlWhile=' and ' + while_date
+        
+        
         #1. 查询用户订单
         try :
             sqlSelect=("SELECT id,orderNo,orderDate,contact,total,amount,payment,status "
-                       "FROM vwOrderList where user='%s' limit %s,%s" % (user,offset,rowcount))
+                       "FROM vwOrderList where user='%s' %s limit %s,%s" % (user,sqlWhile,offset,rowcount) )
             rows_list=db.query(sqlSelect)
         except :
             # 702 : SQL查询失败
@@ -105,7 +133,7 @@ class info(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Content-type','application/json;charset=utf-8');
         self.write(")]}',\n")
-        self.write(json.dumps(rows,cls=DecimalEncoder,ensure_ascii=False))
+        self.write(json.dumps(rows,cls=DecimalAndDateTimeEncoder,ensure_ascii=False))
         return
 
 

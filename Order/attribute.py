@@ -37,11 +37,15 @@ class info(tornado.web.RequestHandler):
         #1. 查询产品属性
         try :
             #1.1 查询付款方式；
-            sqlSelect='SELECT description,code FROM tbPayment order by sort desc'
+            sqlSelect='SELECT description,code,comment FROM tbPayment order by sort desc'
             row_Payment=db.query(sqlSelect)
             #1.2. 查询配送方式；
-            sqlSelect='SELECT description,code FROM tbDelivery order by sort desc'
+            sqlSelect='SELECT description,code,comment FROM tbDelivery order by sort desc'
             row_Delivery=db.query(sqlSelect)
+            #1.3. 获得时间段方式
+            sqlSelect='SELECT description,code FROM vwQueryDate'
+            row_Period=db.query(sqlSelect)
+            
         except Exception as e:
              # 702 : SQL查询失败
             self.gotoErrorPage(702)
@@ -56,7 +60,8 @@ class info(tornado.web.RequestHandler):
         #3. 打包成json object
         rows={
             'payment' : row_Payment,
-            'delivery' : row_Delivery
+            'delivery' : row_Delivery,
+            'period':row_Period
         }
         
         self.set_header('Access-Control-Allow-Origin','*')

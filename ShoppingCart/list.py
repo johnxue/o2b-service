@@ -44,7 +44,7 @@ class info(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Headers', 'app-key,authorization,Content-type')
       
 
-    def get(self):  # 查询用户购物车
+    def get(self):  # 查看购物车里的商品
         if not self.checkAppKey() :
             # 601 : 未经授权的第三方应用
             self.gotoErrorPage(601)
@@ -66,7 +66,7 @@ class info(tornado.web.RequestHandler):
         
         #1. 查询用户购物车
         try :
-            sqlSelect="SELECT id,pId,pCode,name,OriginalPrice,CurrentPrice,number,offline FROM vwShoppingCartList where user='%s'" % (user)
+            sqlSelect="SELECT id,pId,pCode,name,OriginalPrice,CurrentPrice,number,offline,available FROM vwShoppingCartList where user='%s'" % (user)
             rows_list=db.query(sqlSelect)
         except :
             # 702 : SQL查询失败

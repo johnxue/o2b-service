@@ -36,8 +36,9 @@ class info(tornado.web.RequestHandler):
             self.gotoErrorPage(701)
             return
         
-        offset=self.get_argument("o",default='0')
-        rowcount=self.get_argument("r",default='1000')
+        offset=int(self.get_argument("o",default='0'))
+        rowcount=int(self.get_argument("r",default='1000'))
+        offset=offset*rowcount
         sortName=self.get_argument("s",default='')
         sortValue=self.get_argument("v",default='')
         searchString=self.get_argument("q",default='')
@@ -67,7 +68,8 @@ class info(tornado.web.RequestHandler):
         #1. 查询产品属性
         try :
             #1.1 查询产品属性；
-            sqlSelect='SELECT pid,code,categoryCode,name,image,createTime,updateTime,starttime,statusCode,status,totalTopic,totalFollow,totalSold,totalAmount FROM vwProductList %s %s limit %s,%s' %(str_where,str_Order_by,offset,rowcount)
+            sqlSelect=("SELECT pid,code,categoryCode,name,image,createTime,updateTime,starttime,statusCode,status,"
+                       "totalTopic,totalFollow,totalSold,totalAmount FROM vwProductList %s %s limit %s,%s") % (str_where,str_Order_by,offset,rowcount)
             rows_list=db.query(sqlSelect)
         except :
              # 702 : SQL查询失败

@@ -344,9 +344,9 @@ URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
     {
        user         : 'xxxxx',
        shoppingcart : [ 
-                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$offline],
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline],
                         ...
-                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$offline]
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline]
                       ]
     }
 
@@ -412,9 +412,9 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
         "amount":0,
         "comment":"xxxxx"
 	"order" : {
-              [{pid,pcode,name,Price,oPrice,number}],
+              [{pid,pcode,name,price,oPrice,number}],
               ...
-              [{pid,pcode,name,Price,oPrice,number}]
+              [{pid,pcode,name,price,oPrice,number}]
         }
       }
 
@@ -424,7 +424,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
      pid          - 产品id
      pcode        - 产品编码
      name         - 产品名称
-     Price        - 当前价格
+     price        - 当前价格
      OPrice       - 原价
      shipping     - 运送方式
      freight      - 运费,
@@ -452,9 +452,10 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
 
     o = 起始页                  [可选]
     r = 每页行数                [可选]
-    s = 查询项目                [可选, status|...| ... ]
-    v = 查询条件                [可选，取值根据 /o2b/v1.0.0/order/status json的code值]
+    s = 查询项目                [可选, status|period| ... ]
+    v = 查询条件                [可选，period的取值根据 /o2b/v1.0.0/order/attribute json的code值]
     q =模糊查询条件             [可选，多查询关键字用 "+" 隔开]
+
 输出：http status : 200
 {
     "User": "用户名",
@@ -508,8 +509,9 @@ URI: https://192.168.1.210/o2b/v1.0.0/order/attribute
      方法:get
 输出：
               {
-                 "Payment": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
-                 "Delivery" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+                 "payment": [ ["描述","代码","说明"],["描述","代码","说明"],...["描述","代码","说明"] ], 
+                 "delivery" : [ ["描述","代码","说明"],["描述","代码","说明"],...["描述","代码","说明"] ],
+		 "period":[ ["描述","代码"],["描述","代码"],...["描述","代码"] ]
               }
 注：Payment - 配送方式
    Delivery - 配送方式

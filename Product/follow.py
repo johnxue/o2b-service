@@ -203,17 +203,19 @@ class hFollow(tornado.web.RequestHandler):
         #1. 查询产品属性
         try :
             
+            # 返回最后的关注数
+            sqlSelect="select code,totalFollow from tbProductList where code=%s"
+            pl_object=db.getToObject(sqlSelect,(code,))            
+            
             #1.1 查询 tbProductFollower 表；
             sqlSelect= "Select user,pcode From tbProductFollower Where user=%s and pcode=%s"
             pf_List=db.getToList(sqlSelect,(user,code))
             
-            # 返回最后的关注数
-            sqlSelect="select code,totalFollow from tbProductList where code='%s'" % (code)
-            pl_object=db.getToObject(sqlSelect)
             
             if pf_List is not None :
                 pl_object[user]='YES'
             else :
+                pl_object={}
                 pl_object[user]='NO'
 
         except :
@@ -224,7 +226,6 @@ class hFollow(tornado.web.RequestHandler):
         
         #3. 打包成json object
         self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(202)  # 201 操作成功
         self.set_header('Content-type','application/json;charset=utf-8');
         self.write(")]}',\n")
         self.write(json.dumps(pl_object,ensure_ascii=False))
