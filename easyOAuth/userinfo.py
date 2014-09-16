@@ -8,7 +8,7 @@ class Token(tornado.web.RequestHandler):
         self.r=redis.Redis(**config)
         self.pr=self.r.pipeline()
         
-    def saveToRedis(self,token,uid,timeout=1800) :
+    def saveToRedis(self,token,uid,timeout=36000) :
         self.pr.set(token,uid)
         self.pr.expire(token,timeout)
         self.pr.execute()

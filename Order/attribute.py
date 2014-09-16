@@ -4,11 +4,13 @@ import config
 import json
 
 class info(tornado.web.RequestHandler):
-    
-    def gotoErrorPage(self,error_code,es=None) :
+
+    def gotoErrorPage(self,error_code) :
         self.set_header('Access-Control-Allow-Origin','*')
-        self.redirect('/o2b/v1.0.0/error/%d'% error_code )
-        
+        self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
+        self.set_header('Access-Control-Allow-Headers', 'app-key,authorization,Content-type')
+        self.redirect('/o2b/v1.0.0/error/%d'% error_code )    
+
     def post(self) :
         self.set_header('Access-Control-Allow-Origin','*')
         
