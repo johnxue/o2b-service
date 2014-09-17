@@ -46,8 +46,12 @@ class info(tornado.web.RequestHandler):
             rows_level_02=db.query(sqlSelect)
         except :
             # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+
+        db.close()
+
         
         #2. 错误处理
         if ((rows_level_01 is None) or (rows_level_02 is None)) :
@@ -66,9 +70,7 @@ class info(tornado.web.RequestHandler):
                 'ads_level_01' : rows_level_01,
                 'ads_level_02' : rows_level_02
                 }
-        #self.set_header('Authorization', 'Basic '+authcode)
         self.set_header('Access-Control-Allow-Origin','*')
-        #self.set_header('Access-Control-Allow-Methods','*')
         self.set_header('Content-type','application/json;charset=utf-8');
         self.write(")]}',\n")
         self.write(json.dumps(rows,cls=DecimalEncoder,ensure_ascii=False))

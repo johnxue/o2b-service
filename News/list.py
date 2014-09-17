@@ -57,17 +57,14 @@ class info(tornado.web.RequestHandler):
             rows_list=db.query(sqlSelect,(offset,rowcount))
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
         
-        #2. 错误处理
-        if (rows_list is None):
-            # '601' - 未被授权的应用
-            self.gotoErrorPage(601)
-            return
+        db.close()
         
         #3. 错误处理
-        if (len(rows_list)==0):
+        if (len(rows_list)==0 or rows_list is None):
             # '801' - 未找到数据
             self.gotoErrorPage(801)
             return        

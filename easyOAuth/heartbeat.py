@@ -28,7 +28,7 @@ class Handler(tornado.web.RequestHandler):
                 myToken=Token(config.redisConfig)
                 user=myToken.getUser(token).decode('utf-8')
                 myToken.saveToRedis(token,user)
-                time=1800
+                time=36000
             except:
                 time=0
         else :

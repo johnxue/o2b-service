@@ -50,11 +50,13 @@ class Handler(tornado.web.RequestHandler):
             row=db.getToObject(sqlSelect)
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
         
         if (row is None) or ( (row['app_secret']+row['callback_url'])!=(appSecret.strip()+callback_url.strip()) ):
             # '601' - 未被授权的应用
+            db.close()
             self.gotoErrorPage(601)
             return
         
@@ -71,8 +73,11 @@ class Handler(tornado.web.RequestHandler):
             row=db.getToObject(sqlSelect)
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         if (row is None):
             # '602' - 用户名或密码错误.

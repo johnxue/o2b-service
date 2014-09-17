@@ -56,8 +56,11 @@ class info(tornado.web.RequestHandler):
             row=db.getToObject(sqlSelect)            
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #2. 错误处理
         if (row is None) :
@@ -65,7 +68,6 @@ class info(tornado.web.RequestHandler):
             self.gotoErrorPage(801)
             return
         
-       
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Content-type','application/json;charset=utf-8');
         self.write(")]}',\n")

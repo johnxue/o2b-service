@@ -103,9 +103,12 @@ class Handler(tornado.web.RequestHandler):
             
         except :
             db.rollback()
+            db.close()
             # 702 : SQL执行失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #3. 返回
         self.set_header('Access-Control-Allow-Origin','*')

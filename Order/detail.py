@@ -101,6 +101,7 @@ class info(tornado.web.RequestHandler):
         rows_list=self.getOrderList(db, where_conditions)
         if rows_list=='ERROR' :
             # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return            
         
@@ -112,6 +113,7 @@ class info(tornado.web.RequestHandler):
             detail_list=self.getOrderDetailList(db,where_conditions)
             if detail_list=='ERROR' :
                 # 702 : SQL查询失败
+                db.close()
                 self.gotoErrorPage(702)
                 return
         
@@ -200,14 +202,15 @@ class info(tornado.web.RequestHandler):
             sqlUpdate ="Update tbOrderList set status=if(status='110','920','430'),updateTime=now(),updateUser='%s' where id in (%s) and left(status,1)='1'" %(user,oids)
             db.update(sqlUpdate)
             
-        
             db.commit()
-            db.close()
         except :
             db.rollback()
+            db.close()
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #2. 返回
         self.set_header('Access-Control-Allow-Origin','*')

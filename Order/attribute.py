@@ -52,8 +52,11 @@ class info(tornado.web.RequestHandler):
             
         except Exception as e:
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #2. 错误处理
         if (rows_Payment is None) or (rows_Delivery is None) or (rows_Period is None) or (rows_Status is None) :

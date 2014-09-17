@@ -65,8 +65,11 @@ class list(tornado.web.RequestHandler):
             rows_list=db.query(sqlSelect)
         except :
             # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+
+        db.close()
         
         #3. 打包成json object
 
@@ -110,7 +113,7 @@ class list(tornado.web.RequestHandler):
             zipcode    = objRequestBody["z"]
             isDefault  = objRequestBody["i"]
         except :
-            # 801 : 数据库连接失败
+            # 801 : 参数错误
             self.gotoErrorPage(801)
             return
         
@@ -151,9 +154,12 @@ class list(tornado.web.RequestHandler):
 
         except :
             db.rollback()
+            db.close()
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #3. 打包成json object
         rows={
@@ -202,7 +208,7 @@ class list(tornado.web.RequestHandler):
             address    = objRequestBody["a"]
             zipcode    = objRequestBody["z"]
         except :
-            # 801 : 数据库连接失败
+            # 801 : 参数错误
             self.gotoErrorPage(801)
             return        
         
@@ -230,10 +236,13 @@ class list(tornado.web.RequestHandler):
             db.commit()
         except :
             db.rollback()
+            db.close()
+            
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
-        
+
+        db.close()
 
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_status(204)  # 204 操作成功，无返回
@@ -281,9 +290,12 @@ class list(tornado.web.RequestHandler):
             
         except :
             db.rollback()
+            db.close()
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #2. 返回
         self.set_header('Access-Control-Allow-Origin','*')
@@ -331,9 +343,14 @@ class list(tornado.web.RequestHandler):
 
         except :
             db.rollback()
+            db.close()
+            
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
+        
         
         #3. 打包成json object
         rows={

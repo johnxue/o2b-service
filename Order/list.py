@@ -53,7 +53,7 @@ class info(tornado.web.RequestHandler):
     # 查询指定条件的订单（总单）    
     def getOrderList(self,db,where_conditions):
         try :
-            sqlSelect=("SELECT id,orderNo,orderDate,contact,total,amount,payment,status "
+            sqlSelect=("SELECT id,orderNo,orderDate,contact,total,amount,payment,status,statuscode "
                        "FROM vwOrderList %s")%(where_conditions)
             rows_list=db.query(sqlSelect)
         except :
@@ -118,10 +118,12 @@ class info(tornado.web.RequestHandler):
             detail_list=self.getOrderDetailList(db, where_conditions)
             if detail_list is None  :
                 # 702 : SQL查询失败
+                db.close()
                 self.gotoErrorPage(702)
                 return
             
             if len(detail_list)==0:
+                db.close()
                 self.set_header('Access-Control-Allow-Origin','*')
                 self.set_status(404)
                 return
@@ -166,6 +168,7 @@ class info(tornado.web.RequestHandler):
         rows_list=self.getOrderList(db, where_conditions)
         if rows_list=='ERROR' :
             # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return            
         
@@ -189,10 +192,11 @@ class info(tornado.web.RequestHandler):
             detail_list=self.getOrderDetailList(db,where_conditions)
             if detail_list=='ERROR' :
                 # 702 : SQL查询失败
+                db.close()
                 self.gotoErrorPage(702)
                 return                        
         
-        db.close
+        db.close()
             
         if detail_list is not None:   
             # 根据订单号汇总各详单中的图片文件到od
@@ -304,9 +308,13 @@ class info(tornado.web.RequestHandler):
             db.commit()
         except :
             db.rollback()
+            db.close()
+            
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         # 生成订单号
         orderNo=orderDate[0].strftime("%Y%m%d")+"%08d"%orderId
@@ -389,14 +397,17 @@ class info(tornado.web.RequestHandler):
             db.query(sqlSelect)
             sqlUpdate ="Update tbOrderDetail set isDelete='Y',deleteTime=now(),deleteUser='%s' where oid in (%s)" %(user,ids)
             db.update(sqlUpdate)            
-        
             db.commit()
-            db.close()
         except :
             db.rollback()
+            db.close()
+            
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
+        
         
         #2. 返回
         self.set_header('Access-Control-Allow-Origin','*')

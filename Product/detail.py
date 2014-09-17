@@ -57,14 +57,18 @@ class info(tornado.web.RequestHandler):
             
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #2. 错误处理
         if (row_basic is None) :
             # '801' - 未找到数据
             self.gotoErrorPage(801)
             return
+        
         
         #3. 打包成json object
         rows={

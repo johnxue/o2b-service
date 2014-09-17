@@ -23,12 +23,6 @@ class info(tornado.web.RequestHandler):
             self.gotoErrorPage(601)
             return
         
-        try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
         
         #country=self.get_argument("s",default='086')
         province=self.get_argument("p",default='')
@@ -46,8 +40,15 @@ class info(tornado.web.RequestHandler):
             sqlSelect="SELECT areaId,area FROM tbDistrict where father='%s' order by areaId" % (city)
             object_name='district'
         else :
-            # 801 : 数据库连接失败
+            # 801 : 参数错误
             self.gotoErrorPage(801)
+            return
+
+        try :
+            db=dbMysql(config.dbConfig)
+        except :
+            # 701 : 数据库连接失败
+            self.gotoErrorPage(701)
             return
             
             
@@ -56,8 +57,11 @@ class info(tornado.web.RequestHandler):
             rows_list=db.query(sqlSelect)
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+
+        db.close()
         
         #2. 错误处理
         if (rows_list is None):

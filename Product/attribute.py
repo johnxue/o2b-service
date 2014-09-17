@@ -47,8 +47,11 @@ class info(tornado.web.RequestHandler):
             row_Sort=db.query(sqlSelect)
         except Exception as e:
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #2. 错误处理
         if (row_Status is None) or (row_Type is None) or (row_Sort is None):
@@ -64,9 +67,6 @@ class info(tornado.web.RequestHandler):
         }
         
         self.set_header('Access-Control-Allow-Origin','*')
-        #self.set_header('Access-Control-Allow-Methods','*')
-        #self.set_header('Access-Control-Allow-Max-Age','60')
-        #self.set_header('Authorization', 'Basic '+authcode)
         self.set_header('Content-type','application/json;charset=utf-8');
         self.write(")]}',\n")
         self.write(json.dumps(rows,ensure_ascii=False))

@@ -84,6 +84,7 @@ class info(tornado.web.RequestHandler):
             
         except :
              # 702 : SQL查询失败
+            db.close()
             self.gotoErrorPage(702)
             return
         
@@ -176,9 +177,14 @@ class info(tornado.web.RequestHandler):
             db.commit()
         except :
             db.rollback()
+            db.close()
+            
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
+        
         
         # 生成订单号
         #orderNo=orderDate[0].strftime("%Y%m%d")+"%08d"%orderId

@@ -97,9 +97,12 @@ class hFollow(tornado.web.RequestHandler):
 
         except :
             db.rollback()
+            db.close()
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
+        
+        db.close()
         
         #3. 打包成json object
 
@@ -164,10 +167,12 @@ class hFollow(tornado.web.RequestHandler):
 
         except :
             db.rollback()
+            db.close()
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
         
+        db.close()
         #3. 打包成json object
         self.set_header('Access-Control-Allow-Origin','*')
         #self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE')
@@ -220,10 +225,12 @@ class hFollow(tornado.web.RequestHandler):
 
         except :
             db.rollback()
+            db.close()
             # 702 : SQL查询失败
             self.gotoErrorPage(702)
             return
         
+        db.close()
         #3. 打包成json object
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Content-type','application/json;charset=utf-8');
