@@ -1,365 +1,198 @@
-import tornado.web
-from dbMysql import dbMysql
-import config
+from Framework.Base  import WebRequestHandler,BaseError
+from mysql.connector import errors,errorcode
 import json
-from easyOAuth.userinfo import Token
 
-# 
-class list(tornado.web.RequestHandler):
-    
-    def gotoErrorPage(self,error_code) :
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
-        self.redirect('/o2b/v1.0.0/error/%d'% error_code )
-        
-    def checkAppKey(self):
-        if self.request.headers.get('app-key')!=config.App_Key :
-            r = False
-        else :
-            r = True
-        return r
-        
-        
-    def tokenToUser(self):
-        token=self.request.headers.get('Authorization')
-        if token is not None  :
-            myToken=Token(config.redisConfig)
-            try :
-                user=myToken.getUser(token).decode('utf-8')
-            except:
-                user=None
-        else :
-            user=None
-        return user
-    
-
-    def options(self,id=''):
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
-        self.set_header('Access-Control-Allow-Headers', 'app-key,authorization,Content-type')
-      
+class list(WebRequestHandler):
 
     def get(self):  # 查询用户地址
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
+            super().get(self)
+            
+            user=self.getTokenToUser()
+
+            #1. 查询用户地址信息
+            db=self.openDB()
+            
+            conditions={
+                'select' : 'id,user,contact,tel,mobile,email,province,city,area,street,address,isDefault'
+            }
+            
+            rows_list=db.getAllToList('vwAddressList',conditions,user,pk='user')
+            
+            self.closeDB()
+            if len(rows_list)==0 :
+                raise BaseError(802) #802 未找到数据
         
-        #1. 查询用户地址信息
-        try :
-            sqlSelect="SELECT id,user,contact,tel,mobile,email,province,city,area,street,address,isDefault FROM vwAddressList where user='%s'" % (user)
-            rows_list=db.query(sqlSelect)
-        except :
-            # 702 : SQL查询失败
-            db.close()
-            self.gotoErrorPage(702)
-            return
-
-        db.close()
-        
-        #3. 打包成json object
-
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Content-type','application/json;charset=utf-8');
-        self.write(")]}',\n")
-        self.write(json.dumps(rows_list,ensure_ascii=False))
-        
-        return
-
-
+            self.response(rows_list)
+            
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
     
+                    
     def post(self):  # 新增用户地址
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
         
         try :
-            objRequestBody=json.loads(self.request.body.decode('utf-8'))
-        
-            if objRequestBody==None :
-                raise Exception("参数有误")
+            super().post(self)
+            user=self.getTokenToUser()
+            objData=self.getRequestData()
             
-            contact    = objRequestBody["c"]
-            tel        = objRequestBody["t"]
-            mobile     = objRequestBody["m"]
-            email      = objRequestBody["e"]
-            provinceId = objRequestBody["pi"]
-            cityId     = objRequestBody["ci"]
-            areaId     = objRequestBody["ai"]
-            street     = objRequestBody["s"]
-            address    = objRequestBody["a"]
-            zipcode    = objRequestBody["z"]
-            isDefault  = objRequestBody["i"]
-        except :
-            # 801 : 参数错误
-            self.gotoErrorPage(801)
-            return
+            try :
+                contact    = objData["c"]
+                tel        = objData["t"]
+                mobile     = objData["m"]
+                email      = objData["e"]
+                provinceId = objData["pi"]
+                cityId     = objData["ci"]
+                areaId     = objData["ai"]
+                street     = objData["s"]
+                address    = objData["a"]
+                zipcode    = objData["z"]
+                isDefault  = objData["i"]
+            except :
+                raise BaseError(801) # 参数错误
         
-        
-        try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 插入新地址
-        try :
-            
+            db=self.openDB()
             db.begin()
             
-            #1.1 插入 tbUserAddress；
+            #1.用户地址数据 ;
+            addressData={
+                'user'       : user,
+                'contact'    : contact,
+                'tel'        : tel,
+                'mobile'     : mobile,
+                'email'      : email,
+                'provinceId' : provinceId,
+                'cityId'     : cityId,
+                'areaId'     : areaId,
+                'street'     : street,
+                'address'    : address,
+                'zipcode'    : zipcode,
+                'isDefault'  : isDefault,
+                'isDelete'   : 'N',
+                'createUser' : user,
+                'createTime' : '{{now()}}'
+            }
             
-            sqlInsert = (
-              "INSERT INTO tbUserAddress(user,contact,tel,mobile,email,provinceId,cityId,areaId,street,address,zipcode,isDefault,isDelete,createUser,createTime) "
-              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,'N',%s,now())"
-            )
-            
-            addressId=db.save(sqlInsert,(user,contact,tel,mobile,email,provinceId,cityId,areaId,street,address,zipcode,isDefault,user))
-            
+            addressId=db.insert('tbUserAddress',addressData)
+
             if addressId<0 :
-                raise Exception('SQL 语句执行失败 !')
+                raise BaseError(702) # SQL 执行错误
             
-            #1.2 如果新地址是默认地址，应修改tbUser表的默认地址栏
+            #2 如果新地址是默认地址，应修改tbUser表的默认地址栏
             if isDefault.upper()=='Y':
-                sqlSelect="Select user from tbUser where user='%s' for update" % (user)
-                db.query(sqlSelect)                
-                sqlUpdate ="Update tbUser set addressId=%s where user='%s'"
-                db.update(sqlUpdate)                
+                updateData={
+                    'addressId':addressId,
+                    'updateTime':'{{now()}}',
+                    'updateUser':user
+                }
+                db.updateByPk('tbUser',updateData,user,pk='user',commit=False)
             
             db.commit()
+            self.closeDB()                
+
+            #3. 打包成json object
+            row={
+                'user' : user,
+                'address' : addressId
+            }
             
-
-        except :
-            db.rollback()
-            db.close()
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        #3. 打包成json object
-        rows={
-            'user' : user,
-            'address' : addressId
-        }        
-
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(201)  # 201 创建对象成功
-        self.set_header('Content-type','application/json;charset=utf-8');
-        self.write(")]}',\n")
-        self.write(json.dumps(rows,ensure_ascii=False))
-        
-        return
-
-
+            self.response(row) # 201 创建对象成功
+            
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
     
-    def put(self,addressId):  # 修改用户地址
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
 
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
+    def put(self,addressId):  # 修改用户地址，目前此API未使用
         
         try :
-            objRequestBody=json.loads(self.request.body.decode('utf-8'))
+            super().put(self)
+            
+            user=self.tokenToUser()
+            objData=self.getRequestData()
+          
+            try :
+                contact    = objData["c"]
+                tel        = objData["t"]
+                mobile     = objData["m"]
+                email      = objData["e"]
+                provinceId = objData["pi"]
+                cityId     = objData["ci"]
+                areaId     = objData["ai"]
+                street     = objData["s"]
+                address    = objData["a"]
+                zipcode    = objData["z"]
+            except :
+                raise BaseError(801) # 参数错误
         
-            if objRequestBody==None :
-                raise Exception("参数有误")
-
-            aid        = addressId
-            contact    = objRequestBody["c"]
-            tel        = objRequestBody["t"]
-            mobile     = objRequestBody["m"]
-            email      = objRequestBody["e"]
-            provinceId = objRequestBody["pi"]
-            cityId     = objRequestBody["ci"]
-            areaId     = objRequestBody["ai"]
-            street     = objRequestBody["s"]
-            address    = objRequestBody["a"]
-            zipcode    = objRequestBody["z"]
-        except :
-            # 801 : 参数错误
-            self.gotoErrorPage(801)
-            return        
-        
-        
-        try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 查询产品属性
-        try :
+            db=self.openDB()
             db.begin()
             
-            sqlSelect="Select user from tbUserAddress where id='%s' for update" % (aid)
-            db.query(sqlSelect)
+            #1.用户地址数据 ;
+            addressData={
+                'user'       : user,
+                'contact'    : contact,
+                'tel'        : tel,
+                'mobile'     : mobile,
+                'email'      : email,
+                'provinceId' : provinceId,
+                'cityId'     : cityId,
+                'areaId'     : areaId,
+                'street'     : street,
+                'address'    : address,
+                'zipcode'    : zipcode,
+                'updateUser' : user,
+                'updateTime' : '{{now()}}'
+            }
             
-            sqlUpdate ='''Update tbUserAddress set contact=%s ,tel=%s ,mobile=%s ,email=%s ,provinceId=%s,
-                                 cityId=%s ,areaId=%s ,street=%s ,address=%s ,zipcode=%s
-                          where id=%s"
-                        '''
-            db.update(sqlUpdate,((contact,tel,mobile,email,provinceId,cityId,areaId,street,address,zipcode,aid)))                    
+            db.updateByPk('tbUserAddress',updateData,addressId)
+            self.closeDB()
             
-            db.commit()
-        except :
-            db.rollback()
-            db.close()
-            
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
-
-        db.close()
-
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(204)  # 204 操作成功，无返回
-        return
+            self.response() # 204 操作成功，无返回
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
 
 
-
-    
     def delete(self,addressId):  # 删除指定AddressId的地址
-
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-        
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 查询产品属性
-        try :
-            db.begin()
+            super().delete(self)
+            user=self.getTokenToUser()
+            #1. 查询产品属性
             
-            #1.1 从用户地址库删除 tbUserAddress；
-            #sqlDelete = "Delete From tbUserAddress Where id=%s" % (addressId)
-            #db.delete(sqlDelete)
+            db=self.openDB()
+            #1.用户地址数据 ;
+            addressData={
+                'isDelete'   : 'Y',
+                'deleteUser' : user,
+                'deleteTime' : '{{now()}}'
+            }
             
-            #1. 更新 tbUserAddress 的isDelete为'Y'；
-            sqlSelect="Select id from tbUserAddress where id='%s' for update" % (addressId)
-            db.query(sqlSelect)
-            sqlUpdate ="Update tbUserAddress set isDelete='Y',deleteTime=now(),deleteUser=%s where id=%s;"
-            db.update(sqlUpdate,(user,addressId))                      
+            db.updateByPk('tbUserAddress',addressData,addressId)
+            self.closeDB()
+            
+            self.response()
 
-            db.commit()
-            
-        except :
-            db.rollback()
-            db.close()
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        #2. 返回
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(204)  # 204 操作成功，无返回
-        return
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+
 
     def patch(self,addressId):   # 变更用户默认地址
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-            
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 查询产品属性
-        try :
+            super().patch(self)
+            user=self.getTokenToUser()
             
-            db.begin()
+            db=self.openDB()
+
+            # 更新 tbUser 的默认地址；
+            updateData={
+                'addressId':addressId,
+                'updateTime':'{{now()}}',
+                'updateUser':user
+            }
+            db.updateByPk('tbUser',updateData,user,pk='user')
             
-            #1. 更新 tbUserAddress 的默认地址；
-            sqlSelect="Select user from tbUserAddress where user='%s' for update" % (user)
-            db.query(sqlSelect)
-            sqlUpdate ="Update tbUserAddress set isDefault=if(id=%s,'Y','N') where user=%s;"
-            db.update(sqlUpdate,(addressId,user))                    
+            self.closeDB()
 
-            #2. 更新 tbUser 的默认地址；
-            sqlSelect="Select user from tbUser where user='%s' for update" % (user)
-            db.query(sqlSelect)
-            sqlUpdate ="Update tbUser set addressId=%s where user=%s;"
-            db.update(sqlUpdate,(addressId,user))                    
+            self.response() # 204 操作成功，无返回
             
-            db.commit()
-
-        except :
-            db.rollback()
-            db.close()
-            
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        
-        #3. 打包成json object
-        rows={
-            'user' : user,
-            'defaultAddressId' : addressId
-        }        
-
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(204)  # 204 操作成功，无返回
-
-        return
- 
+        except BaseError as e:
+            self.gotoErrorPage(e.code)

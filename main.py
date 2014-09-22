@@ -1,100 +1,72 @@
-import os
+import os.path
 import ssl
-from tornado.httpserver import HTTPServer
-import tornado.ioloop
-import tornado.web
-import logging
-import config
+import tornado.httpserver
+import tornado.web  
+import tornado.ioloop  
+import tornado.options  
+from tornado.options import define, options  
 
-import Error
+import logging  
+import route
 
-import easyOAuth.login
-import easyOAuth.logout
-import easyOAuth.heartbeat
 
-import Product.attribute
-import Product.list
-import Product.detail
-import Product.follow
 
-import Address.list
-import Address.userAddress
+import Framework.dbMysql,config
 
-import AdSense.list
+from Framework.Base  import BaseError
 
-import News.list
-import News.detail
 
-import ShoppingCart.list
+define("port", default=8081, help="run port", type=int)
 
-import Order.list
-import Order.detail
-import Order.attribute
-import Order.Returns.list
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "templates")  
+STATIC_PATH = os.path.join(os.path.dirname(__file__), "static")
 
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.write("Hello, world\n")
+        raise tornado.web.HTTPError(404)
         
 class MyFile(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
         self.set_header("Cache-control", "no-cache")
 
-settings = {'debug' : True}  #开启调试模式
+class Application(tornado.web.Application):  
+    def __init__(self):  
+        handlers = route.handlers
+        dbConfig = config.pdbConfig
+        
+        settings = dict(  
+            template_path = TEMPLATE_PATH,   
+            static_path = STATIC_PATH,   
+            debug = True  #开启调试模式
+        )
+        
+        tornado.web.Application.__init__(self, handlers, **settings)  
+        self.db = Framework.dbMysql.DB(dbConfig)
 
-application = tornado.web.Application([
-    (r"/o2b/", MainHandler),
-    
-    (r"/o2b/v1.0.0/news", News.list.info),
-    (r"/o2b/v1.0.0/news/([0-9]+)", News.detail.info),
-    
-    (r"/o2b/v1.0.0/area", Address.list.info),
-    (r"/o2b/v1.0.0/address", Address.userAddress.list),
-    (r"/o2b/v1.0.0/address/([0-9]+)", Address.userAddress.list),
-
-    (r"/o2b/v1.0.0/login/(.*)/(.*)", easyOAuth.login.Handler),
-    (r"/o2b/v1.0.0/logout", easyOAuth.logout.Handler),
-    (r"/o2b/v1.0.0/service/heartbeat", easyOAuth.heartbeat.Handler),
-
-    (r"/o2b/v1.0.0/product/([0-9]+)/follow", Product.follow.hFollow),
-    (r"/o2b/v1.0.0/product/([0-9]+)", Product.detail.info),
-    (r"/o2b/v1.0.0/product/attribute", Product.attribute.info),
-    (r"/o2b/v1.0.0/product", Product.list.info),
-    
-    (r"/o2b/v1.0.0/shoppingcart", ShoppingCart.list.info),
-    
-    (r"/o2b/v1.0.0/order", Order.list.info),
-    (r"/o2b/v1.0.0/order/([0-9]+)", Order.detail.info),
-    (r"/o2b/v1.0.0/order/attribute", Order.attribute.info),
-    (r"/o2b/v1.0.0/order/returns", Order.Returns.list.info),
-
-    (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
-
-    (r"/o2b/v1.0.0/error/([0-9]+)", Error.Handler),
-    
-
-],**settings)
-
-
-
-if __name__ == "__main__":
-    application.listen(8081)
+        
+def main():  
+    tornado.options.parse_command_line()  
+    app = tornado.httpserver.HTTPServer(Application())
+    app.listen(options.port)  
     tornado.ioloop.IOLoop.instance().start()
 
-'''
 
-if __name__ == "__main__":
-    
-    if config.DEBUG :
-        logging.basicConfig(filename=config.LOG_FILENAME,format=config.LOG_FORMAT,datefmt='%y-%m-%d %H:%M:%S',level=logging.DEBUG)
-        
-    server = HTTPServer(application,ssl_options={
+
+def sslMain():  
+    #if config.DEBUG :
+    #    logging.basicConfig(filename=config.LOG_FILENAME,format=config.LOG_FORMAT,datefmt='%y-%m-%d %H:%M:%S',level=logging.DEBUG)
+
+    #tornado.options.options.logging = "debug"  #注意parse_command_line(默认层级为info)对logging层级的影响
+    tornado.options.parse_command_line()  
+    app = tornado.httpserver.HTTPServer(Application(),ssl_options={
            "certfile": os.path.join(os.path.abspath("./ca/"), "server210.crt"),
            "keyfile": os.path.join(os.path.abspath("./ca/"), "server210.key"),
-    	})
-    
+    	}) 
+    app.listen(options.port)  
+    tornado.ioloop.IOLoop.instance().start()  
 
-    server.listen(8081)
-    tornado.ioloop.IOLoop.instance().start()
-'''
+
+if __name__ == "__main__":
+    main()
+    

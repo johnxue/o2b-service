@@ -1,121 +1,57 @@
-import tornado.web
-from dbMysql import dbMysql
+from Framework.Base  import WebRequestHandler,BaseError
+from mysql.connector import errors,errorcode
 import config
-import json
 from easyOAuth.userinfo import Token
 
-# 
-class Handler(tornado.web.RequestHandler):
-    
-    def gotoErrorPage(self,error_code) :
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.redirect('/o2b/v1.0.0/error/%d'% error_code )
-        
-    def checkAppKey(self):
-        if self.request.headers.get('app-key')!=config.App_Key :
-            r = False
-        else :
-            r = True
-        return r
-        
-        
-    def tokenToUser(self):
-        token=self.request.headers.get('Authorization')
-        if token is not None  :
-            myToken=Token(config.redisConfig)
-            try :
-                user=myToken.getUser(token).decode('utf-8')
-            except:
-                user=None
-        else :
-            user=None
-        return user
+class Handler(WebRequestHandler):
     
     def delUserToken(self):
-        token=self.request.headers.get('Authorization')
+        token = self.getRequestHeader('Authorization')
         if token is not None  :
             try :
-                myToken=Token(config.redisConfig)
-                s=myToken.delUser(token) # 成功删除应返回成功受影响的记录数
+                myToken = Token(config.redisConfig)
+                s       = myToken.delUser(token) # 成功删除应返回成功受影响的记录数
             except:
-                s=0
+                s = 0
         else :
-            s=None
+            s = None
         return s
     
 
-    def options(self,id=''):
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
-        self.set_header('Access-Control-Allow-Headers', 'app-key,authorization,Content-type')
-      
-
     def delete(self):  # 用户logout
-
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        token=self.request.headers.get('Authorization')
-        user=self.tokenToUser()
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return        
-
-        r=self.delUserToken()
-        
-        if r>0:
-            strLogs='User:%s Token:%s [ Redisk 删除成功,r.delte()=%d ]' % (user,token,r)
-        else :
-            strLogs='User:%s Token:%s [ Redisk 删除失败,r.delete()=%d ]' % (user,token,r)
-
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
+            super().delete(self)
+            
+            token = self.getRequestHeader('Authorization')
+            user  = self.getTokenToUser()
+            
+            r     = self.delUserToken()
         
-        #1. 查询产品属性
-        try :
+            if r>0:
+                strLogs = 'User:%s Token:%s [ Redisk 删除成功,r.delte()=%d ]' % (user,token,r)
+            else :
+                strLogs = 'User:%s Token:%s [ Redisk 删除失败,r.delete()=%d ]' % (user,token,r)
+            
+            if user is None :
+                self.set_status()  # 204 操作成功，无返回
+                return
 
-            db.begin()
+            db = self.openDB()
             
-            #2.1 更新 tbUser 表的用户最后一次登出时间 
-            sqlSelect="Select user from tbUser where user='%s' for update" % (user)
-            db.query(sqlSelect)
-            
-            sqlUpdate ="Update tbUser set lastLogout=now() where user='%s'" % (user)
-            db.update(sqlUpdate)                    
+            # 更新 tbUser 表的用户最后一次登出时间
+            db.updateByPk('tbUser',{'lastLogout':'@fun:now()'},user,pk='user')                        
             
             #2.2 插入 tbLogs 日志库；
-            sqlInsert = (
-              "INSERT INTO tbLogs(user,level,content,createTime) "
-              "VALUES (%s, %s, %s, now())"
-            )
+            logsData = {
+                'user': user,
+                'level' : 'USE',
+                'content': strLogs+' Logout 操作完成.',
+                'createTime':'{{now()}}'
+            }
+            db.insert('tbLogs',logsData)
             
-            strLogs+=' Logout 操作完成.'
-            addressId=db.save(sqlInsert,(user,'USE',strLogs))
+            self.closeDB()
+            self.response()
             
-            db.commit()
-            
-        except :
-            db.rollback()
-            db.close()
-            # 702 : SQL执行失败
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        #3. 返回
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Access-Control-Expose-Headers','Authorization')
-        self.set_header('Authorization', '')     
-        # 下面需要观察，有无Header的返回
-        self.set_status(204)  # 204 操作成功，无返回
-        return
-
- 
+        except BaseError as e:
+            self.gotoErrorPage(e.code)

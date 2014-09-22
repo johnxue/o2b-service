@@ -103,7 +103,21 @@ URI: https://192.168.1.210/o2b/v1.0.0/logout
 输出：http status : 204 操作成功，无返回
       无
 
-4.1.4 Token心跳
+4.1.4. 修改密码
+URI: https://192.168.1.210/o2b/v1.0.0/changepassword
+注：$userid从Token中获得
+输入：
+     方法:patch
+     http header：Authorization
+     {
+        'oldPassword' : '旧密码'
+	'newPassword' : '新密码'
+     }
+
+输出：http status : 204 操作成功，无返回
+      无
+
+4.1.5 Token心跳
 URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
 注：$userid从Token中获得
 输入：
@@ -182,7 +196,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow
 
 
 4.3.2. 用户取消关注产品
-输入：
+输入：https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow
+
      http header：Authorization
      方法:DELETE 
      参数:
@@ -574,10 +589,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
 输入：http status : 204
      http header：Authorization
      方法:patch
-     参数:
-     {
-          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
-     }
+
           
 输出：http status : 204 操作成功，无返回
 

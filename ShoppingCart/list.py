@@ -1,293 +1,146 @@
-import tornado.web
-from dbMysql import dbMysql
-import config
-import json
-import decimal
-from easyOAuth.userinfo import Token
+from Framework.Base  import WebRequestHandler,BaseError
+from mysql.connector import errors,errorcode
 
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, decimal.Decimal):
-            return float(o)
-        return super(DecimalEncoder, self).default(o)
-
-class info(tornado.web.RequestHandler):
-    
-    def gotoErrorPage(self,error_code) :
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.redirect('/o2b/v1.0.0/error/%d'% error_code )
-        
-    def checkAppKey(self):
-        if self.request.headers.get('app-key')!=config.App_Key :
-            r = False
-        else :
-            r = True
-        return r
-        
-        
-    def tokenToUser(self):
-        token=self.request.headers.get('Authorization')
-        if token is not None  :
-            myToken=Token(config.redisConfig)
-            try :
-                user=myToken.getUser(token).decode('utf-8')
-            except:
-                user=None
-        else :
-            user=None
-        return user
-    
-
-    def options(self,id=''):
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
-        self.set_header('Access-Control-Allow-Headers', 'app-key,authorization,Content-type')
-      
+class info(WebRequestHandler):
 
     def get(self):  # 查看购物车里的商品
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 查询用户购物车
-        try :
-            sqlSelect="SELECT id,pId,pCode,name,OriginalPrice,CurrentPrice,number,offline,available FROM vwShoppingCartList where user='%s'" % (user)
-            rows_list=db.query(sqlSelect)
-        except :
-            # 702 : SQL查询失败
-            db.close()
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        #3. 打包成json object
-        rows={
-            'User' : user,
-            'ShoppingCart' : rows_list
-        }              
+            super().get(self)
+            
+            ''' <业务代码开始> --------------------------------------------------------------------------'''
+            
+            user = self.getTokenToUser()    # 从Token中获得用户名
 
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Content-type','application/json;charset=utf-8');
-        self.write(")]}',\n")
-        self.write(json.dumps(rows_list,cls=DecimalEncoder,ensure_ascii=False))
-        return
+            db   = self.openDB()            # 打开数据库
+            
+            #1. 查询用户购物车
+            conditions = {
+                'select' : 'id,pId,pCode,name,OriginalPrice,CurrentPrice,number,offline,available'
+            }
+            rows_list = db.getAllToList('vwShoppingCartList',conditions,user,pk='user')  # 查询结果以List的方式返回          
 
+            self.closeDB()                # 关闭数据库
+            
+            if len(rows_list)==0 :        # 没有查到数据抛802异常
+                raise BaseError(802)      
+        
+            #2. 打包成json object
+            rows = {
+                'User'         : user,
+                'ShoppingCart' : rows_list
+            } 
+
+            self.response(rows)          # 返回查询结果
+            
+            ''' <业务代码结束> --------------------------------------------------------------------------'''
+            
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
 
     
     def post(self):  # 向购物车填加商品
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-        
         try :
-            objRequestBody=json.loads(self.request.body.decode('utf-8'))
-        
-            if objRequestBody==None :
-                raise Exception("参数有误")
+            super().post(self)
             
-            pid    = objRequestBody["pid"]
-            pcode   = objRequestBody["pcode"]
-            number = objRequestBody["number"]
+            user    = self.getTokenToUser()
+            objData = self.getRequestData()
+           
+            # -- 推荐以下方式对POST数据进行MAP和校验 
+            try :
+                pid    = objData["pid"]
+                pcode  = objData["pcode"]
+                number = objData["number"]
+            except :
+                raise BaseError(801) # 参数错误
+        
+            db = self.openDB()
+            
+            
+            #1.插入购物车 tbShoppingCart ;
+            cartData = {
+                'user'       : user,
+                'pId'        : pid,
+                'pCode'      : pcode,
+                'number'     : number,
+                'createUser' : user,
+                'createTime' : '{{now()}}',
+                'isDelete'   : 'N'
+            }
+            
+            cartId = self.insert('tbShoppingCart',cartData)
+            
+            if cartId < 0 :
+                raise BaseError(703) # 插入失败
+            
+            self.closeDB()
+        
+            #2. 打包成json object
+            rows = {
+                'user' : user,
+                'shoppingCartId' : shoppingCartId
+            }
 
-        except :
-            # 801 : 数据库连接失败
-            self.gotoErrorPage(801)
-            return
-        
-        
-        try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 插入新地址
-        try :
+            self.response(rows) # 201 创建对象成功
             
-            db.begin()
-            
-            #1.1 插入 tbShoppingCart ;
-            
-            sqlInsert = (
-              "INSERT INTO tbShoppingCart(user,pId,pCode,number,isDelete,createUser,createTime) "
-              "VALUES (%s, %s, %s, %s, 'N', %s, now())"
-            )
-            
-            shoppingCartId=db.save(sqlInsert,(user,pid,pcode,number,user))
-            
-            if shoppingCartId<0 :
-                raise Exception('SQL 语句执行失败 !')
-            
-            db.commit()
-            
-
-        except :
-            db.rollback()
-            db.close()
-            
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        #3. 打包成json object
-        rows={
-            'user' : user,
-            'shoppingCartId' : shoppingCartId
-        }        
-
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(201)  # 201 创建对象成功
-        self.set_header('Content-type','application/json;charset=utf-8');
-        self.write(")]}',\n")
-        self.write(json.dumps(rows,ensure_ascii=False))
-        
-        return
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
 
 
     def delete(self):  # 删除购物车指定id
-
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-        
-        objRequestBody=json.loads(self.request.body.decode('utf-8'))
-
-        if objRequestBody==None :
-            raise Exception("参数有误")
-
-        shoppingCartIds = objRequestBody["ids"]
-        
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 查询产品属性
-        try :
-            db.begin()
+            super().delete(self)
             
-            #1. 更新 tbShoppingCart 的isDelete为'Y'；
-            sqlSelect="Select id from tbShoppingCart where id in (%s) for update" % (shoppingCartIds)
-            db.query(sqlSelect)
-            sqlUpdate ="Update tbShoppingCart set isDelete='Y',deleteTime=now(),deleteUser='%s' where id in (%s)" %(user,shoppingCartIds)
-            db.update(sqlUpdate)                      
+            user    = self.getTokenToUser()
+            
+            objData = self.getRequestData()
+            
+            cartIds = objData["ids"]
 
-            db.commit()
+            db      = self.openDB()
             
-        except :
-            db.rollback()
-            db.close()
+            updateData = {
+                'isDelete':'Y',
+                'deleteTime':'{{now()}}',
+                'deleteUser':user
+            }
             
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
+            db.updateByPk('tbShoppingCart',updateData,'{{ in (%s)}}'%(cartIds))
+            self.closeDB()
         
-        db.close()
-        
-        #2. 返回
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(204)  # 204 操作成功，无返回
-        return
+            #2. 返回
+            self.response(status=204) # 204 操作成功，无返回
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+
 
     def patch(self):   # 变更购物车中指定商品数量
-        if not self.checkAppKey() :
-            # 601 : 未经授权的第三方应用
-            self.gotoErrorPage(601)
-            return
-        
-        user=self.tokenToUser()
-
-        if user is None :
-            # 602 : 未经登录授权的应用
-            self.gotoErrorPage(602)
-            return
-
-        #number=int(self.get_argument("n",default='0'))
-        #shopperCartId=int(self.get_argument("i",default='0'))
-        
-        objRequestBody=json.loads(self.request.body.decode('utf-8'))
-
-        if objRequestBody==None :
-            raise Exception("参数有误")
-
-        shopperCartId = int(objRequestBody["id"])
-        number        = int(objRequestBody["number"])
-        
-
-        if number<=0 or shopperCartId<=0:
-            # 801 : 参数出错
-            self.gotoErrorPage(801)
-            return
-            
         try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        #1. 查询产品属性
-        try :
+            super().patch(self)
             
-            db.begin()
+            user     = self.getTokenToUser()
             
-            #1. 更新 tbUserAddress 的默认地址；
-            sqlSelect="Select id from tbShoppingCart where id='%s' for update" % (shopperCartId)
-            db.query(sqlSelect)
-            sqlUpdate ="Update tbShoppingCart set number=%s where id=%s;"
-            db.update(sqlUpdate,(number,shopperCartId))                    
+            objData = self.getRequestData()
             
-            db.commit()
+            try :
+                cartId = objData["id"]
+                number = objData["number"]
+            except :
+                raise BaseError(801) # 参数错误
+            
+            if number <= 0 or cartId <= 0:
+                raise BaseError(801) # 参数错误
 
-        except :
-            db.rollback()
-            db.close()
+            db = self.openDB()
             
-            # 702 : SQL查询失败
-            self.gotoErrorPage(702)
-            return
-        
-        db.close()
-        
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_status(204)  # 204 操作成功，无返回
-
-        return
- 
+            updateData = {
+                           'number':number,
+                           'updateTime':'{now()}',
+                           'updateUser':user
+                       }
+                       
+            db.updateByPk('tbShoppingCart',updateData,cartId)            
+            
+            self.closeDB()
+            self.response() # 204 操作成功，无返回
+        except BaseError as e:
+            self.gotoErrorPage(e.code)

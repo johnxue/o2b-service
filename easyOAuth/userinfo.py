@@ -1,12 +1,9 @@
-import tornado.web
-import config
 import redis
 
-class Token(tornado.web.RequestHandler):
-    
+class Token():
     def __init__(self,config):
-        self.r=redis.Redis(**config)
-        self.pr=self.r.pipeline()
+        self.r  = redis.Redis(**config)
+        self.pr = self.r.pipeline()
         
     def saveToRedis(self,token,uid,timeout=36000) :
         self.pr.set(token,uid)

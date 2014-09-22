@@ -1,75 +1,43 @@
-import tornado.web
-from dbMysql import dbMysql
-import config
-import json
+from Framework.Base  import WebRequestHandler,BaseError
+from mysql.connector import errors,errorcode
 
-class info(tornado.web.RequestHandler):
-    
-    def gotoErrorPage(self,error_code,es=None) :
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.redirect('/o2b/v1.0.0/error/%d'% error_code )
-        
-    def post(self) :
-        self.set_header('Access-Control-Allow-Origin','*')
-        
-    def options(self):
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
-        self.set_header('Access-Control-Allow-Headers', 'app-key,authorization')
-          
+class info(WebRequestHandler):
+
     def get(self):
-        
-        if self.request.headers.get('app-key')!=config.App_Key :
-            # 601 : 数据库连接失败
-            self.gotoErrorPage(601)
-            return
+        try :
+            super().get(self)
+            db=self.openDB()
 
-        try :
-            db=dbMysql(config.dbConfig)
-        except :
-            # 701 : 数据库连接失败
-            self.gotoErrorPage(701)
-            return
-        
-        row_Sort=None
-        row_Status=None
-        row_Type=None
-        #1. 查询产品属性
-        try :
             #1.1 查询产品属性；
-            sqlSelect='SELECT description,code FROM tbProductStatus order by sort'
-            row_Status=db.query(sqlSelect)
+            conditions = {
+                'select' : 'description,code',
+                'order'  : 'sort'
+            }
+            row_Status = db.getAllToList('tbProductStatus',conditions)            
+
             #1.2. 查询产品分类；
-            sqlSelect='SELECT description,code FROM tbProductCategory order by sort'
-            row_Type=db.query(sqlSelect)
+            row_Type = db.getAllToList('tbProductCategory',conditions)            
+
             #1.3. 查询产品排序；
-            sqlSelect='SELECT description,field FROM tbProductOnline order by sort'
-            row_Sort=db.query(sqlSelect)
-        except Exception as e:
-             # 702 : SQL查询失败
-            db.close()
-            self.gotoErrorPage(702)
-            return
+            conditions = {
+                'select' : 'description,field',
+                'order'  : 'sort'
+            }
+            row_Sort = db.getAllToList('tbProductOnline',conditions)
+            
+            self.closeDB()
         
-        db.close()
+            #2. 错误处理
+            if len(row_Status)==0 or len(row_Type)==0 or len(row_Sort)==0:
+                raise BaseError(802) # 无数据
         
-        #2. 错误处理
-        if (row_Status is None) or (row_Type is None) or (row_Sort is None):
-            # '601' - 未被授权的应用
-            self.gotoErrorPage(601)
-            return
-        
-        #3. 打包成json object
-        rows={
-            'attribute' : row_Status,
-            'category' : row_Type,
-            'sort' : row_Sort
-        }
-        
-        self.set_header('Access-Control-Allow-Origin','*')
-        self.set_header('Content-type','application/json;charset=utf-8');
-        self.write(")]}',\n")
-        self.write(json.dumps(rows,ensure_ascii=False))
-        
-        return
- 
+            #3. 打包成json object
+            rows={
+                'attribute' : row_Status,
+                'category'  : row_Type,
+                'sort'      : row_Sort
+            }
+            self.response(rows)
+            
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
