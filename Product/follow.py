@@ -73,13 +73,7 @@ class hFollow(WebRequestHandler):
             #1.3 更改tbProdcutList.totalFollow-1
             db.updateByPk('tbProductList',data,code,pk='code',commit=False)
             
-            
-            #1.2 更改tbUser.totalFollow-1
-            #sqlUpdate="Update tbUser set totalFollow=totalFollow-1 where user='%s' and totalFollow>0" % (user)
-            
-            #1.3 更改tbProdcutList.totalFollow-1
-            #sqlUpdate="Update tbProductList set totalFollow=totalFollow-1 where code='%s' and totalFollow>0" % (code)
-
+          
             db.commit()
             
             # 返回最后的关注数
@@ -87,11 +81,10 @@ class hFollow(WebRequestHandler):
                 'select' : 'code,totalFollow',
                 'where'  : 'code="%s"' % (code)
             }
-            #sqlSelect="select code,totalFollow from tbProductList where code='%s'" % (code)
+            
             row_object=db.getToObjectByPk('tbProductList',returnData,code,pk='code')
             
             self.closeDB()
-            #self.set_status(201)  # 201 创建对象成功
             self.response(row_object)
                         
         except BaseError as e:

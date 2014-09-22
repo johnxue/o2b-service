@@ -38,7 +38,7 @@ class info(WebRequestHandler):
             
             # 初始化数据
             ids=''  # 订单号集合
-            row_list=detail_list=None  # 订单及订单详情
+            row_list=None;detail_list=None  # 订单及订单详情
     
             db=self.openDB()
 
@@ -66,14 +66,12 @@ class info(WebRequestHandler):
             # 模糊查询 - 结束
             
             # 按时间段查询
-            where_date=where_status=where_search=''
+            where_date='';where_status='';where_search=''
             if s=='period' :
                 if v!='' or v!='ALL':
                     period=v
                     
-                    conditions={
-                                'select' : 'where_date'
-                            }
+                    conditions={ 'select' : 'where_date' }
                     rows_list = db.getToObjectByPk('tbQueryDate',conditions,period,pk='code')                      
                     
                     if len(row_list)>0 :
@@ -193,12 +191,6 @@ class info(WebRequestHandler):
             
             orderId=db.insert('tbOrderList',insertData)            
             
-            #sqlInsert = (
-            #  "INSERT INTO tbOrderList (user,addressID,payment,shipping,freight,total,amount,createUser,comment,createTime,isDelete,status) "
-            #  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,now(),'N','110')"
-            #)
-            #
-            #orderId=db.save(sqlInsert,(user,aId,payment,shipping,freight,total,amount,user,comment))
             
             if orderId<0 :
                 raise BaseError(702) # SQL执行错误                    
@@ -226,11 +218,6 @@ class info(WebRequestHandler):
                 }
                 odId=db.insert('tbOrderDetail',insertData)                      
                 
-                #sqlInsert = (
-                #    "INSERT INTO tbOrderDetail (oid,pid,pcode,pname,CurrentPrice,OriginalPrice,number,amount,createTime,createUser,isDelete) "
-                #    "VALUES (%s, %s, %s, %s, %s, %s, %s, CurrentPrice*number,now(),%s ,'N')"
-                #)
-                #odId=db.save(sqlInsert,(orderId,pid,pcode,name,price,oPrice,number,user))
                 
                 if odId<0 :
                     raise BaseError(801) # SQL执行错误                    
@@ -242,11 +229,6 @@ class info(WebRequestHandler):
                 
                 db.updateByPk('tbOrderList',updateData,orderId,commit=False)
                 
-                #sqlSelect="select createTime from tbOrderList where id='%s' for update" % (orderId)
-                #orderDate=db.getToList(sqlSelect)
-                
-                #sqlUpdate="Update tbOrderList set orderNo=CONCAT(DATE_FORMAT(createTime,'%s'),LPAD(id,8,'0')) where id=%s" % ('%Y%m%d',orderId)
-                #db.update(sqlUpdate)            
     
                 db.commit()
                 

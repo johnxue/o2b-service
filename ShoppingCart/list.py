@@ -108,7 +108,7 @@ class info(WebRequestHandler):
             self.closeDB()
         
             #2. 返回
-            self.response(status=204) # 204 操作成功，无返回
+            self.response() 
         except BaseError as e:
             self.gotoErrorPage(e.code)
 
