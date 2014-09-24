@@ -107,7 +107,7 @@ class hFollow(WebRequestHandler):
             #1.1 查询 tbProductFollower 表；
             conditions = {
                 'select' : 'user,pcode',
-                'where'  : 'user="%s" and pcode="%s" and isDelete<>"Y"' % (user,code)
+                'where'  : 'user="%s" and pcode="%s" and isDelete in ("N","",Null)' % (user,code)
             }
             pf_List = db.getAllToList('tbProductFollower',conditions)            
             

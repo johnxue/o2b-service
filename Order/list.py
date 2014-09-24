@@ -72,7 +72,7 @@ class info(WebRequestHandler):
                     period=v
                     
                     conditions={ 'select' : 'where_date' }
-                    rows_list = db.getToObjectByPk('tbQueryDate',conditions,period,pk='code')                      
+                    row_list = db.getToObjectByPk('tbQueryDate',conditions,period,pk='code')                      
                     
                     if len(row_list)>0 :
                         where_date=row_list['where_date']
@@ -108,13 +108,10 @@ class info(WebRequestHandler):
             }
             
             # 生成订单号集合到 ids
-            if len(ids)<=0 and len(rows_list)>0 :
-                for  row in rows_list :
-                    ids+=str(row[0])+','
-                ids+='-1'
-            
+            ids=db.get_ids(rows_list)
+
             # 根据ids查询详单
-            obj_OD_Imgs={}
+            sub_Order={}
             if len(ids)>0 and (detail_list is None):
                 #1. 根据订单ID查询用户详单
                 where_conditions=" oid in (%s)" % (ids)
@@ -123,7 +120,17 @@ class info(WebRequestHandler):
                     raise BaseError(802) # 没有找到数据                    
             
             self.closeDB()
-            
+          
+            # 重新梳理子订单
+            if len(detail_list)>0:   
+                for  row in detail_list :
+                    try : 
+                        sub_Order[row[0]].append(row)
+                    except :
+                        sub_Order[row[0]]=[]
+                        sub_Order[row[0]].append(row)
+
+            '''
             if len(detail_list)>0:   
                 # 根据订单号汇总各详单中的图片文件到od
                 for  row in detail_list :
@@ -134,12 +141,13 @@ class info(WebRequestHandler):
                         #obj_OD_Imgs[row[0]]=row[1]
                         obj_OD_Imgs[row[0]]=[]
                         obj_OD_Imgs[row[0]].append(row[1])
+            '''
             
             # 拼接订单 
             if len(rows_list)>0 :
                 for  i in range(len(rows_list)) :
                     try :
-                        rows_list[i]=(rows_list[i],obj_OD_Imgs[rows_list[i][0]])
+                        rows_list[i]=(rows_list[i],sub_Order[rows_list[i][0]])
                     except :
                         pass
             
@@ -164,7 +172,7 @@ class info(WebRequestHandler):
                 shipping  = objRequestBody["shipping"]       # 运送方式ID
                 total     = int(objRequestBody["total"])     # 货物总数量
                 freight   = float(objRequestBody["freight"]) # 运费
-                amount    = float(objRequestBody["amount"])  # 总金额
+                amount    = float(objRequestBody["amount"])  # 总金额 (不含运费)
                 comment   = objRequestBody["comment"]        # 备注
                 orderList = objRequestBody["orders"]         # 详单
             except :
@@ -243,8 +251,8 @@ class info(WebRequestHandler):
                 rows={
                     "user"    : user,
                     "orderId" : orderId,
-                    "amount"  : amount,
-                    "payment" : freight,
+                    "amount"  : amount+freight,   # 含运费
+                    "payment" : payment,
                     "orderNo" : row['orderNo']
                 }
                 

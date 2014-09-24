@@ -33,13 +33,13 @@ class Handler(WebRequestHandler):
                 strLogs = 'User:%s Token:%s [ Redisk 删除失败,r.delete()=%d ]' % (user,token,r)
             
             if user is None :
-                self.set_status()  # 204 操作成功，无返回
+                self.response()
                 return
 
             db = self.openDB()
             
             # 更新 tbUser 表的用户最后一次登出时间
-            db.updateByPk('tbUser',{'lastLogout':'@fun:now()'},user,pk='user')                        
+            db.updateByPk('tbUser',{'lastLogout':'{{now()}}'},user,pk='user')                        
             
             #2.2 插入 tbLogs 日志库；
             logsData = {

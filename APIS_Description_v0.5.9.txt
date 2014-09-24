@@ -1,4 +1,4 @@
-预售平台核心URI V0.5.9
+预售平台核心URI V0.5.10
 ==============================
 
 # 最后一次更新时间：2014.9.16
@@ -31,50 +31,111 @@
 
    具体错误代码定义如下：
 
-   errorDic={
-            900 : {
+errorDic={
+        900 : {
                 "code": "900",
                 "status": 500,
                 "message": "未被定义的错误类型",
                 "help_document": "/oauth/v1.0.0/help/900"
-            },
-            601: {
-                "code": "601",
-                "status":401,
-                "message": "未经过JctOAuth授权的第三方应用",
-                "help_document": "/oauth/v1.0.0/help/601"
-            },
-            602: {
-                "code": "602",
-                "status":401,
-                "message": "未登录授权的应用",
-                "help_document": "/oauth/v1.0.0/help/602"
-            },
-            603: {
-                "code": "603",
-                "status":404,
-                "message": "无法识别的用户名或密码",
-                "help_document": "/oauth/v1.0.0/help/603"
-            },                  
-            701: {
-                  "code": "701",
-                  "status":500,
-                  "message": "数据库连接失败",
-                  "help_document": "/oauth/v1.0.0/help/701"
-            },
-            702: {
-                  "code": "702",
-                  "status":500,
-                  "message":"SQL语句执行失败",
-                  "help_document":"/oauth/v1.0.0/help/702"
-            },
-            801: {
-                  "code": "801",
-                  "status":404,
-                  "message":"没有找到数据",
-                  "help_document":"/o2b/v1.0.0/help/801"
-            }
-        }
+        },
+        601: {
+            "code": "601",
+            "status":401,
+            "message": "未经过JctOAuth授权的第三方应用",
+            "help_document": "/oauth/v1.0.0/help/601"
+        },
+        602: {
+            "code": "602",
+            "status":401,
+            "message": "未登录授权的应用",
+            "help_document": "/oauth/v1.0.0/help/602"
+        },
+        603: {
+            "code": "603",
+            "status":404,
+            "message": "无法识别的用户名或密码",
+            "help_document": "/oauth/v1.0.0/help/603"
+        },                  
+        701: {
+              "code": "701",
+              "status":500,
+              "message": "数据库连接失败",
+              "help_document": "/oauth/v1.0.0/help/701"
+        },
+        702: {
+                      "code": "702",
+                      "status":500,
+                      "message": "无法从链接池中获得数据库连接",
+                      "help_document": "/oauth/v1.0.0/help/702"
+        },        
+        703: {
+              "code": "703",
+              "status":500,
+              "message":"SQL 语句执行失败(I)",
+              "help_document":"/oauth/v1.0.0/help/703"
+        },
+        704: {
+              "code": "704",
+              "status":500,
+              "message":"SQL 语句执行失败(D)",
+              "help_document":"/oauth/v1.0.0/help/704"
+        },
+        705: {
+              "code": "705",
+              "status":500,
+              "message":"SQL 语句执行失败(U)",
+              "help_document":"/oauth/v1.0.0/help/705"
+        },
+        706: {
+              "code": "706",
+              "status":500,
+              "message":"SQL 语句执行失败(S)",
+              "help_document":"/oauth/v1.0.0/help/706"
+        },
+        707: {
+              "code": "707",
+              "status":500,
+              "message":"SQL 语句执行失败(C)",
+              "help_document":"/oauth/v1.0.0/help/707"
+        },
+        801: {
+              "code": "801",
+              "status":400,
+              "message":"参数列表错误",
+              "help_document":"/o2b/v1.0.0/help/801"
+        },
+        802 : {
+            "code": "802",
+            "status":404,
+            "message":"没有找到数据",
+            "help_document":"/o2b/v1.0.0/help/802"
+        },
+        811 : {
+            "code"          : "811",
+            "status"        : 400,
+            "message"       : "未知的图片格式（从文件后缀上判断）",
+            "help_document" : "/o2b/v1.0.0/help/811"
+        },
+        812 : {
+                    "code"          : "812",
+                    "status"        : 400,
+                    "message"       : "未知的图片格式",
+                    "help_document" : "/o2b/v1.0.0/help/811"
+        },        
+        813 : {
+            "code"          : "813",
+            "status"        : 400,
+            "message"       : "值得怀疑的图片(非法图片格式)",
+            "help_document" : "/o2b/v1.0.0/help/812"
+        },
+        814 : {
+            "code"          : "814",
+            "status"        : 400,
+            "message"       : "图片长宽超界",
+            "help_document" : "/o2b/v1.0.0/help/813"
+        }             
+}
+
 
 4. URI说明
 4.1 认证
@@ -103,19 +164,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/logout
 输出：http status : 204 操作成功，无返回
       无
 
-4.1.4. 修改密码
-URI: https://192.168.1.210/o2b/v1.0.0/changepassword
-注：$userid从Token中获得
-输入：
-     方法:patch
-     http header：Authorization
-     {
-        'oldPassword' : '旧密码'
-	'newPassword' : '新密码'
-     }
 
-输出：http status : 204 操作成功，无返回
-      无
 
 4.1.5 Token心跳
 URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
@@ -151,8 +200,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
   q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
   输出：
               {
-                 product : [$pid,$code,$categoryCode,$name,$image,$createTime,$updateTime,$starttime,$statusCode,$status,
-                            $totalTopic,$totalFollow,$totalSold,$totalAmount],...]
+                 product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
+                            $totalTopic,$totalFollow,$totalSold,$totalAmount)],...]
               }
 
   例1： 输出所有产品列表（默认只显示前1000条记录）
@@ -223,6 +272,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow
      }
 
 
+
 4.4 购物车
 4.4.1 得到某用户的购物车
 URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
@@ -234,12 +284,12 @@ URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
     {
        user         : 'xxxxx',
        shoppingcart : [ 
-                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline],
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline,$image],
                         ...
-                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline]
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline,$image]
                       ]
     }
-
+注：这里传回来的image是小图，在产品名称中image=img+'-'+产品编码+'-'+[small|medium|large|banner]+'.jpg'
 4.4.2 加入购物车
 URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
 输入：
@@ -294,14 +344,14 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
      方法:post
      参数:
      {
-	"user" : "xxxx",
-        "aId"  : 00,
-        "payment":"00",
-        "shipping": "00",
-        "freight" : 0,
-        "total" :0,
-        "amount":0,
-        "comment":"xxxxx"
+	"user"      : "xxxx",
+        "aId"       : 00,
+        "payment"   : "00",
+        "shipping"  : "00",
+        "freight"   : 0,
+        "total"     : 0,
+        "amount"    : 0,
+        "comment"   : "xxxxx"
 	"order" : {
               [{pid,pcode,name,price,oPrice,number}],
               ...
@@ -321,7 +371,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
      freight      - 运费,
      number       - 数量
      total        - 总数
-     amount       - 总金额
+     amount       - 总金额（不含运费）
      comment      - 备注
      
 
@@ -330,7 +380,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/order
        "user"    : "用户名",
        "orderId" : 订单id，
        "orderNo" : 订单号，
-       "amount"  : 总金额，
+       "amount"  : 总金额，（含运费）
        "payment" : 付款方式id 
     }
 
@@ -640,8 +690,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
    输出：
               {
 		ads_level_01:[[$code,$image],...],
-                ads_level_02:[$code,$name,$description,$imagelarge,$starttime,$status,
-                              $totalTopic,$totalFollow,$totalSold,$totalAmount],...]
+                ads_level_02:[$code,name,$description,$imagelarge,$starttime,$endtime,$statusCode,$status,
+			     $totalTopic,$totalFollow,$totalSold,$totalAmount,],...]
               }
 
    例1：获得主页面1级页面广告
@@ -660,19 +710,61 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
 
 4.10 用户
 4.10.1 查看用户信息
-4.10.2 更改用户信息
-4.10.3 变更密码
+URI: https://192.168.1.210/o2b/v1.0.0/user/info
+输入：
+     http header：Authorization
+     方法:get
+输出：     参数:
+     {
+        "nickname"   : "昵称",
+	"heard_icon" : "头像文件名",
+	"my_group"   : "",
+	"join_group" : ""
+     }
+
+
+4.10.2 上传用户头像
+URI: https://192.168.1.210/o2b/v1.0.0/user/header
+输入：
+     http header：Authorization
+     方法:post
+     参数:
+     {
+        "type"        : "图像归属类型",
+	"codeorid"    : "编码或ID"
+     }
+输出： http status : 201
+
+注： 图像归属类型 ： header | prodcut.banner | prodcut.large | prodcut.medium | prodcut.small | group
+    编码或ID     : 当类型是 header     时为空 ''
+                  当类型是 prodcut.x  时为 product的产品编码
+	          当类型是 group      时为 group 的ID号字符		  
+
+
+4.10.3 用户变更密码
+URI: https://192.168.1.210/o2b/v1.0.0/user/info/pmssmed
+输入：
+     http header：Authorization
+     方法:patch
+     参数:
+     {
+        "oldPwd" : "原密码",
+	"newPwd" : "新密码"
+     }
+输出： http status : 204
+
+
 4.10.4 绑定手机
 
 
-
-
-
-
-
-
-    
- 
-
-
-
+4.10.5. （我的关注 - 产品）列出用户的所有关注产品
+URI: https://192.168.1.210/o2b/v1.0.0/user/product/follow
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+输出： http status : 200
+{
+ product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
+                            $totalTopic,$totalFollow,$totalSold,$totalAmount)],...]
+}

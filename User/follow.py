@@ -2,52 +2,39 @@ from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
 
 class info(WebRequestHandler):
-    
-    def get(self):
-        
+
+    def get(self): #功能: 查询用户关注列表返回产品信息
         try :
             super().get(self)
+            user=self.getTokenToUser()
         
             offset=int(self.get_argument("o",default='0'))
             rowcount=int(self.get_argument("r",default='1000'))
             offset=offset*rowcount
-            sortName=self.get_argument("s",default='')
-            sortValue=self.get_argument("v",default='')
-            searchString=self.get_argument("q",default='')
-        
-            str_Order_by='';
-            str_where='';
-        
-            if sortName == 'sort':
-                str_Order_by='`%s` desc' % (sortValue)
-        
-            if sortName=='attribute' and sortValue!="ALL" :
-                str_where='`statusCode`="%s"' % (sortValue)
-            
-            if sortName=='category' and sortValue!="0000" :
-                str_where='`categoryCode`="%s"' % (sortValue) 
-        
-            sw=''
-            if len(searchString)>0 :
-                for word in searchString.split(' ') :
-                    sw+='`name` like "%'+word+'%" or '
-                
-                searchString='%'+searchString.replace(' ','%')+'%'
-                str_where=' %s `name` like "%s"' % (sw,searchString)
-                 
             
             db=self.openDB()
-
-            #1.1 查询产品；
+            
+            #1. 查询 tbProductFollower 表,并返回该用户所关注的产品code；
+            conditions = {
+                'select' : '{{distinct pcode}}',
+                'where'  : 'user="%s" and isDelete<>"Y" or isDelete is Null' % (user)
+            }
+            pf_List = db.getAllToList('tbProductFollower',conditions)
+            if len(pf_List)==0 :
+                raise BaseError(802) # 未找到数据
+            
+            codes=db.get_ids(pf_List)  #取回产品code列表
+            
+            #2. 查询产品；
             conditions = {
                 #'select' : ('pid,code,categoryCode,name,image,createTime,updateTime,starttime,statusCode,status,'
                 #            'totalTopic,totalFollow,totalSold,totalAmount'),
                 'select' : ('pid,code,categoryCode,name,image,starttime,endTime,statusCode,status,'
-                            'totalTopic,totalFollow,totalSold,totalAmount'),                
+                            'totalTopic,totalFollow,totalSold,totalAmount'),                       
+                'where'  : 'FIND_IN_SET(code,"%s")' % (codes),
+                'order'  : 'pid desc',
                 'limit'  : '%s,%s' % (offset,rowcount)
             }
-            if str_where    : conditions['where']=str_where
-            if str_Order_by : conditions['order']=str_Order_by
             
             rows_list = db.getAllToList('vwProductList',conditions)  # 查询结果以List的方式返回  
             

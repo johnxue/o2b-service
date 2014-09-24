@@ -58,10 +58,17 @@ proj.directory-list = [{'dirloc': loc('Product'),
                         'filter': '*',
                         'include_hidden': False,
                         'recursive': True,
+                        'watch_for_changes': True},
+                       {'dirloc': loc('User'),
+                        'excludes': (),
+                        'filter': '*',
+                        'include_hidden': False,
+                        'recursive': True,
                         'watch_for_changes': True}]
 proj.file-list = [loc('APIS_Description_v0.5.9.txt'),
                   loc('config.py'),
                   loc('main.py'),
                   loc('Product/list.py'),
+                  loc('README'),
                   loc('route.py')]
 proj.file-type = 'shared'

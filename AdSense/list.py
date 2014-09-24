@@ -7,7 +7,6 @@ class info(WebRequestHandler):
         # channel - 网站频道
         # level - 该网站频道上的第几级页面
         try :
-            self.checkAppKey()
             db=self.openDB()
             
             #1. 查询广告属性；
@@ -18,18 +17,18 @@ class info(WebRequestHandler):
                 'where'  : {
                     'channel':channel,
                     'pageIndex':level,
-                    'level':1
+                    'level':'1'
                 }
             }
             rows_level_01=db.getAllToList('vwAdSenseList',conditions)            
             
             conditions={
-                'select' : 'code,name,description,imagelarge,starttime,status,totalAmount,totalTopic,totalFollow',
+                'select' : 'code,name,description,imagelarge,starttime,endtime,statusCode,status,totalTopic,totalFollow,totalSold,totalAmount',
                 'order'  : 'subIndex',
                 'where'  : {
                     'channel':channel,
                     'pageIndex':level,
-                    'level':2
+                    'level':'2'
                 }
             }
             

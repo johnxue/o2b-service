@@ -32,7 +32,7 @@ errorDic={
         702: {
                       "code": "702",
                       "status":500,
-                      "message": "无法获得连接",
+                      "message": "无法从链接池中获得数据库连接",
                       "help_document": "/oauth/v1.0.0/help/702"
         },        
         703: {
@@ -71,12 +71,36 @@ errorDic={
               "message":"参数列表错误",
               "help_document":"/o2b/v1.0.0/help/801"
         },
-        802: {
+        802 : {
             "code": "802",
             "status":404,
             "message":"没有找到数据",
-            "help_document":"/o2b/v1.0.0/help/801"
-        }
+            "help_document":"/o2b/v1.0.0/help/802"
+        },
+        811 : {
+            "code"          : "811",
+            "status"        : 400,
+            "message"       : "未知的图片格式（从文件后缀上判断）",
+            "help_document" : "/o2b/v1.0.0/help/811"
+        },
+        812 : {
+                    "code"          : "812",
+                    "status"        : 400,
+                    "message"       : "未知的图片格式",
+                    "help_document" : "/o2b/v1.0.0/help/811"
+        },        
+        813 : {
+            "code"          : "813",
+            "status"        : 400,
+            "message"       : "值得怀疑的图片(非法图片格式)",
+            "help_document" : "/o2b/v1.0.0/help/812"
+        },
+        814 : {
+            "code"          : "814",
+            "status"        : 400,
+            "message"       : "图片长宽超界",
+            "help_document" : "/o2b/v1.0.0/help/813"
+        }             
 }
 
 

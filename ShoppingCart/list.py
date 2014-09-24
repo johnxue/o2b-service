@@ -15,7 +15,7 @@ class info(WebRequestHandler):
             
             #1. 查询用户购物车
             conditions = {
-                'select' : 'id,pId,pCode,name,OriginalPrice,CurrentPrice,number,offline,available'
+                'select' : 'id,pId,pCode,name,OriginalPrice,CurrentPrice,number,offline,available,image'
             }
             rows_list = db.getAllToList('vwShoppingCartList',conditions,user,pk='user')  # 查询结果以List的方式返回          
 
@@ -67,7 +67,7 @@ class info(WebRequestHandler):
                 'isDelete'   : 'N'
             }
             
-            cartId = self.insert('tbShoppingCart',cartData)
+            cartId = db.insert('tbShoppingCart',cartData)
             
             if cartId < 0 :
                 raise BaseError(703) # 插入失败
@@ -77,7 +77,7 @@ class info(WebRequestHandler):
             #2. 打包成json object
             rows = {
                 'user' : user,
-                'shoppingCartId' : shoppingCartId
+                'shoppingCartId' : cartId
             }
 
             self.response(rows) # 201 创建对象成功
@@ -134,7 +134,7 @@ class info(WebRequestHandler):
             
             updateData = {
                            'number':number,
-                           'updateTime':'{now()}',
+                           'updateTime':'{{now()}}',
                            'updateUser':user
                        }
                        

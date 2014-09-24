@@ -52,7 +52,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
                 status = 204                                                      # DELETE,PUT,PATCH无返回时 - 204	
         
         self.set_status(status)
-        if status==204 : return
+        #if status==204 : return
 
         self.options()
         self.set_header("Content-Type", "application/json; charset=UTF-8")
@@ -156,4 +156,3 @@ class WebRequestHandler(tornado.web.RequestHandler):
         else :
             time=0
         return time
- 

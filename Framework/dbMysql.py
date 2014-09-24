@@ -46,61 +46,6 @@ class DB():
     def rollback(self):
         self.__conn.rollback()
     
-    '''    
-    def save(self,sql,params=None, multi=False):
-        try :
-            self.cur.execute(sql,params,multi)
-            return self.cur.lastrowid
-        except :
-            raise BaseError(703)
-        
-        
-    def delete(self,sql,params=None, multi=False):
-        try :
-            return self.cur.execute(sql,params,multi)
-        except :
-            raise BaseError(704)
-
-    def update(self,sql,params=None, multi=False):
-        try:
-            return self.cur.execute(sql,params,multi)
-        except :
-            raise BaseError(705)
-        
-        
-    def query(self,sql,params=None, multi=False):
-        try :
-            self.cur.execute(sql,params,multi)
-            return self.cur.fetchall()
-        except :
-            raise BaseError(706)
-
-    
-    def get(self,sql,params=None, multi=False):
-        try :
-            self.cur.execute(sql,params,multi)
-            row=self.cur.fetchone()
-            return row
-        except :
-            raise BaseError(706)
-
-    def getToList(self,sql,params=None, multi=False):
-        return self.get(sql,params,multi)
-    
-        
-    def getToObject(self,sql,params=None, multi=False):
-        try :
-            self.cur.execute(sql,params,multi)
-            col=self.cur.column_names
-            row=self.cur.fetchone()
-            if row is not None :
-                row=dict(zip(col,row))
-            else :
-                row={}
-            return row
-        except :
-            raise BaseError(706)
-  '''      
 #---------------------------------------------------------------------------
     def findBySql(self,sql,params = {},limit = 0,join = 'AND',lock=False):
         """
@@ -209,7 +154,7 @@ class DB():
         return self.__query(table,criteria,all=True)
 
 
-    def insert(self,table,data):
+    def insert(self,table,data,commit=True):
         # 新增一条记录
         try :
             
@@ -236,6 +181,7 @@ class DB():
             sql = 'INSERT INTO `%s` (%s) VALUES (%s)'%(table,fields,values)
             cursor = self.__getCursor()
             cursor.execute(sql,tuple(newData.values()))
+            if commit : self.commit()
             insert_id = cursor.lastrowid
             return insert_id
         except:
@@ -272,59 +218,6 @@ class DB():
     def updateByPk(self,table,data,id,pk='id',commit=True,lock=True):
         # 根据主键更新，默认是id为主键
         return self.update(table,data,{pk:id},commit=commit,lock=lock)
-    '''
-    
-    def updateByPk(self,table,data,id,pk='id',commit=True,group=False):
-        # 根据一组主键更新，默认是id为主键，即SQL id in (id1,id2,...,idn)
-        
-        # 分离有mysql函数的字段
-        
-        try :
-
-            funData={};newData={};funFields=''
-            
-            # 从data中移出含用SQL函数的字字段到funData字典中
-            for (k,v) in data.items():
-                if 'str' in str(type(v)) and '@fun:' == v.lower()[:5] :
-                    funData[k]=v[5:]
-                else : 
-                    newData[k]=v
-                    
-            if funData :
-                funFields = ','.join('`'+k+'`=%s' % (v) for k,v in funData.items())
-
-            fields = ','.join('`'+k+'`=%s' for k in newData.keys())
-            
-            # fields 与 funFields 合并
-            if funFields :
-                fields = ','.join([fields,funFields])
-                
-            values = list(newData.values())
-            if group :
-                sqlWhere=" where `%s` in (%s) " %  (pk,id)
-            else : 
-                sqlWhere=self.__joinWhere('',{pk:id},'AND')
-                values.extend(list({pk:id}.values()))
-                
-            cursor = self.__getCursor()
-            if commit : self.begin()
-            
-            # 加行锁            
-            sqlSelectLock="SELECT `%s` From `%s` %s for update" % (pk,table,sqlWhere)
-            if group:
-                cursor.execute(sqlSelectLock)
-            else :
-                cursor.execute(sqlSelectLock,(id,))
-            
-            sqlUpdate = "UPDATE `%s` SET %s %s"% (table,fields,sqlWhere)
-            cursor.execute(sqlUpdate,tuple(values))
-            
-            if commit : self.commit()
-            return cursor.rowcount
-        except :
-            # 失败的回滚交错误处理模块去做
-            raise BaseError(705)         
-'''
  
     
 # 内部私有的方法 -------------------------------------------------------------------------------------
@@ -414,7 +307,7 @@ class DB():
             #select fields
             if 'select' in criteria:
                 fields = criteria['select'].split(',')
-                sql+= ','.join('`'+field+'`' for field in fields)
+                sql+= ','.join(field[2:-2] if '{{' == field[:2] and '}}'==field[-2:] else '`'+field+'`' for field in fields)
             else:
                 sql+=' * '
             #table
@@ -495,3 +388,19 @@ class DB():
         # 拼最终的 where
         where=((newWhere+' AND ' if newWhere else '')+funWhere if funWhere else newWhere) if join=='AND' else ((newWhere+' OR ' if newWhere else '')+funWhere if funWhere else newWhere)
         return (where,values)
+    
+    
+    def get_ids(self,list): #从getAllToList返回中提取id
+        try:
+            test=list[0][0]
+            dimension=2
+        except:
+            dimension=1
+            
+        ids=[]
+        if dimension>1 : 
+            for i in range(len(list)) : ids.append(str(list[i][0]))
+        else : 
+            for i in range(len(list)) : ids.append(str(list[i]))
+        
+        return ','.join(ids)    
