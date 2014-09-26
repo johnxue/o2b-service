@@ -20,7 +20,7 @@ class hFollow(WebRequestHandler):
                 'followtime' : '{{now()}}',
                 'isDelete'   : 'N'
             }
-            id = db.insert('tbProductFollower',followerData)            
+            id = db.insert('tbProductFollower',followerData,commit=False)            
                
             if id < 0  :
                 raise BaseError(702) # SQL 执行失败

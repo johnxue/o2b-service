@@ -73,7 +73,7 @@ class list(WebRequestHandler):
                 'createTime' : '{{now()}}'
             }
             
-            addressId=db.insert('tbUserAddress',addressData)
+            addressId=db.insert('tbUserAddress',addressData,commit=False)
 
             if addressId<0 :
                 raise BaseError(702) # SQL 执行错误
@@ -125,7 +125,6 @@ class list(WebRequestHandler):
                 raise BaseError(801) # 参数错误
         
             db=self.openDB()
-            db.begin()
             
             #1.用户地址数据 ;
             addressData={

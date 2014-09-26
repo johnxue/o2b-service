@@ -197,7 +197,7 @@ class info(WebRequestHandler):
                 'status'     : '110'  # status- 110 等待买家付款 
             }
             
-            orderId=db.insert('tbOrderList',insertData)            
+            orderId=db.insert('tbOrderList',insertData,commit=False)            
             
             
             if orderId<0 :
@@ -224,7 +224,7 @@ class info(WebRequestHandler):
                     'createTime'    : '{{now()}}',
                     'isDelete'      : 'N'
                 }
-                odId=db.insert('tbOrderDetail',insertData)                      
+                odId=db.insert('tbOrderDetail',insertData,commit=False)                      
                 
                 
                 if odId<0 :

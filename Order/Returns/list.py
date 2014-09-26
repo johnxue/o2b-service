@@ -83,7 +83,7 @@ class info(WebRequestHandler):
                 'status': '310'                # status- 310 买家申请退换货
             }
             
-            soId=db.insert('tbReturns',insertData)
+            soId=db.insert('tbReturns',insertData,commit=False)
             
             if soId<0 : raise BaseError(702) # SQL操作失败
             
