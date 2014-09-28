@@ -290,6 +290,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
                       ]
     }
 注：这里传回来的image是小图，在产品名称中image=img+'-'+产品编码+'-'+[small|medium|large|banner]+'.jpg'
+
+
 4.4.2 加入购物车
 URI: https://192.168.1.210/o2b/v1.0.0/shoppingcart
 输入：
@@ -482,6 +484,32 @@ URI: https://192.168.1.210/o2b/v1.0.0/order/returns
     "user"        : "登录用户名",
     "swapOrderNo" : "退换货单号"
 }
+
+
+4.5.6. 退货根据照片上传
+URI: https://192.168.1.210/o2b/v1.0.0/order/returns/uploadfile
+
+输入：
+     http header：Authorization
+     方法:post
+     参数:
+     
+        type        = "order.returns",
+	code        = "产品编码",
+	orderid     = "订单号",
+   
+
+限制 : 图片最大不能超过4M
+输出： http status : 201
+{
+"path":"文件所在的路径",
+"filename": "文件名"
+}
+  
+注： type   ： 必须为 order.returns 
+    code    : 产品编码
+    orderid : 订单id
+    
 
 4.5.7. 退换货状态查询
 URI: https://192.168.1.210/o2b/v1.0.0/order/returns/$swid
@@ -729,16 +757,15 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/header
      http header：Authorization
      方法:post
      参数:
-     {
-        "type"        : "图像归属类型",
-	"codeorid"    : "编码或ID"
-     }
+        type        = "header"
+	picture     = "文件名"  (类型为 file)
+     
 输出： http status : 201
-
-注： 图像归属类型 ： header | prodcut.banner | prodcut.large | prodcut.medium | prodcut.small | group
-    编码或ID     : 当类型是 header     时为空 ''
-                  当类型是 prodcut.x  时为 product的产品编码
-	          当类型是 group      时为 group 的ID号字符		  
+{
+"path":"文件所在的路径",
+"filename": "文件名"
+}
+  
 
 
 4.10.3 用户变更密码
@@ -768,3 +795,35 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/product/follow
  product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
                             $totalTopic,$totalFollow,$totalSold,$totalAmount)],...]
 }
+
+
+4.11 系统服务
+
+4.11.1 文件上传
+URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
+输入：
+     http header：Authorization
+     方法:post
+     参数:
+     
+        type         = "图像归属类型",
+	code         = "编码",
+	orderid      = "订单号",
+	groupid      = "圈子id"
+   
+
+限制 : 图片最大不能超过4M
+
+输出： http status : 201
+{
+"path":"文件所在的路径",
+"filename": "文件名"
+}
+  
+实际输出文件名前面有:"tmp_"头，为临时文件，待文本信息正时提交后，自动去掉'tmp_'头成为正式文件
+注： type 图像归属类型 ： header | prodcut.banner | prodcut.large | prodcut.medium | prodcut.small | order.returns |  group
+    code 产品编码     : 当类型是 header 或 groupid  时为空 ''
+                      当类型是 prodcut.banner|large|medium|small   时为 product 的产品编码
+	             当类型是 order.returns 时为 product 的产品编码
+    order_id 订单id  : 当类型为 order.returns 有效
+    groupid  圈子id  : 当类型为 group时有效		  

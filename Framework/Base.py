@@ -132,6 +132,22 @@ class WebRequestHandler(tornado.web.RequestHandler):
         else :
             return objRequestBody
         
+        
+    def getRequestArguments(self):
+        try :
+            data=self.request.arguments
+            if data=={} :
+                return {}
+                
+            #objRequestBody=json.loads(self.request.arguments.decode('utf-8'))
+            objData={}
+            for (k,v) in  data.items():
+                objData[k]=v[0].decode('utf-8')
+            return objData
+        except:
+            raise BaseError(801) # 参数错误
+
+        
     def openDB(self):
         db=self.application.db
         self._db_ =db

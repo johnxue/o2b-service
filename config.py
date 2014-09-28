@@ -42,11 +42,17 @@ imageConfig={
             'size' : 1*1024*1024
     },
     'prodcut.small' : {
-                'path' : '/var/www/o2b/v1.0.0/app/images/product',
-                'long' : 60,
-                'wide' : 60,
-                'size' : 1*512*1024
-    },         
+            'path' : '/var/www/o2b/v1.0.0/app/images/product',
+            'long' : 60,
+            'wide' : 60,
+            'size' : 1*512*1024
+    },
+    'order.returns' : {
+            'path' : '/var/www/o2b/v1.0.0/app/images/returns',
+            'long' : 1920,
+            'wide' : 1080,
+            'size' : 2*1024*1024
+        },             
     'header'  : {
         'path' : '/var/www/o2b/v1.0.0/app/images/header',
         'long' : 80,
@@ -58,6 +64,9 @@ imageConfig={
         'long':100,
         'wide' : 100,
         'size' : 4*1024*1024
+    },
+    'temp' : {
+        'path':'/var/www/o2b/v1.0.0/app/images/tmp'
     }
 }
 

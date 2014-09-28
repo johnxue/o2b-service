@@ -100,7 +100,13 @@ errorDic={
             "status"        : 400,
             "message"       : "图片长宽超界",
             "help_document" : "/o2b/v1.0.0/help/813"
-        }             
+        },
+        815 : {
+            "code"          : "815",
+            "status"        : 404,
+            "message"       : "没有找到图片",
+            "help_document" : "/o2b/v1.0.0/help/813"
+        }
 }
 
 

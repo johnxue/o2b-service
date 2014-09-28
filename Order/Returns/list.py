@@ -1,5 +1,7 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
+import config
+import os
 
 class info(WebRequestHandler):
     
@@ -60,6 +62,13 @@ class info(WebRequestHandler):
                 swapOrderNo = mode+orderNo                        # 退货货单号   
             except :
                 raise BaseError(801) # 参数错误
+            
+            imgFileOld=config.imageConfig['temp']['path']+'/'+imgProblem
+            imgFileNew=config.imageConfig['order.returns']['path']+'/'+imgProblem
+            try :
+                os.rename(imgFileOld,imgFileNew) # os.rename只能同盘移动，否则就是拷贝速度
+            except :
+                raise BaseError(801) # 参数错误
                 
             db=self.openDB()
             db.begin()
@@ -108,6 +117,7 @@ class info(WebRequestHandler):
                 "orderNo"      : orderNo,
                 "swapOrderNo"  : swapOrderNo,
             }
+            
 
             self.response(rows)
                         

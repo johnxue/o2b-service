@@ -69,9 +69,16 @@ handlers = [
             (r"/o2b/v1.0.0/order/([0-9]+)", Order.detail.info),
             (r"/o2b/v1.0.0/order/attribute", Order.attribute.info),
             (r"/o2b/v1.0.0/order/returns", Order.Returns.list.info),
+            (r"/o2b/v1.0.0/order/returns/upload", Service.uploadfile.Handler),
+            
 
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
+            #服务
+            (r"/o2b/v1.0.0/service/uploadfile", Service.uploadfile.Handler),
+            
+            #其它
             (r".*", Framework.Base.Base404Handler),
+            
 
         ]
