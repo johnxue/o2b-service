@@ -23,50 +23,65 @@ redisConfig={
 }
 
 imageConfig={
-    'prodcut.banner' : {
+    'product.banner' : {
         'path' : '/var/www/o2b/v1.0.0/app/images/product',
+        'url'  : '/images/product',
         'long' : 2560,
         'wide' : 450,
         'size' : 2*1024*1024
     },
-    'prodcut.large' : {
+    'product.large' : {
             'path' : '/var/www/o2b/v1.0.0/app/images/product',
+            'url'  : '/images/product',
             'long' : 468,
             'wide' : 224,
             'size' : 1*1024*1024
     },
-    'prodcut.medium' : {
+    'product.medium' : {
             'path' : '/var/www/o2b/v1.0.0/app/images/product',
+            'url'  : '/images/product',
             'long' : 223,
             'wide' : 165,
             'size' : 1*1024*1024
     },
-    'prodcut.small' : {
+    'product.small' : {
             'path' : '/var/www/o2b/v1.0.0/app/images/product',
+            'url'  : '/images/product',
             'long' : 60,
             'wide' : 60,
             'size' : 1*512*1024
     },
     'order.returns' : {
             'path' : '/var/www/o2b/v1.0.0/app/images/returns',
+            'url'  : '/images/returns',
             'long' : 1920,
             'wide' : 1080,
             'size' : 2*1024*1024
         },             
     'header'  : {
         'path' : '/var/www/o2b/v1.0.0/app/images/header',
+        'url'  : '/images/header',
         'long' : 80,
         'wide' : 80,
         'size' : 1*512*1024
         },
     'group'  : {
         'path':'/var/www/o2b/v1.0.0/app/images/group',
+        'url'  : '/images/group',
         'long':100,
         'wide' : 100,
         'size' : 4*1024*1024
     },
+    'news'  : {
+        'path':'/var/www/o2b/v1.0.0/app/images/news',
+        'url'  : '/images/news',
+        'long' :1024,
+        'wide' :768,
+        'size' : 4*1024*1024
+    },    
     'temp' : {
-        'path':'/var/www/o2b/v1.0.0/app/images/tmp'
+        'path':'/var/www/o2b/v1.0.0/app/images/tmp',
+        'url' :'/images/tmp'
     }
 }
 

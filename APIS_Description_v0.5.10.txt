@@ -734,6 +734,27 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
 
 
 4.9 圈子
+4.9.1 创建圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group
+输入：
+     http header：Authorization
+     方法:POST 
+     参数:
+     {
+       "name" : "圈子名称",
+       "desc" : "圈子描述",
+       "cat"  : "圈子分类Code",
+       "pwd"  : "圈子私有密码"
+     }
+          
+
+输出：http status : 201
+     {
+       'group'   :  '圈子名称',
+       'groupid' :  '圈子id'
+     }
+
+
 
 
 4.10 用户
@@ -827,3 +848,24 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
 	             当类型是 order.returns 时为 product 的产品编码
     order_id 订单id  : 当类型为 order.returns 有效
     groupid  圈子id  : 当类型为 group时有效		  
+    
+
+
+5. API 说明
+URI: https://192.168.1.210/o2b/v1.0.0/apis
+输入：
+     方法:get
+     参数:
+     
+        n         = "当前节点",
+	f         = "父节点",
+
+输出： http status : 200
+
+{
+[[$id,$node,$fatherNode,$URI,$name,$description,$httpMethod,$inputParameter,$inputData,$outputStatus,$outData,$comment],
+ ...,
+ ]
+}
+
+注： 不加n,f参数时只列出主节点

@@ -99,13 +99,19 @@ errorDic={
             "code"          : "814",
             "status"        : 400,
             "message"       : "图片长宽超界",
-            "help_document" : "/o2b/v1.0.0/help/813"
+            "help_document" : "/o2b/v1.0.0/help/814"
         },
         815 : {
             "code"          : "815",
             "status"        : 404,
             "message"       : "没有找到图片",
-            "help_document" : "/o2b/v1.0.0/help/813"
+            "help_document" : "/o2b/v1.0.0/help/815"
+        },
+        816 : {
+            "code"          : "816",
+            "status"        : 400,
+            "message"       : "文件存贮失败！",
+            "help_document" : "/o2b/v1.0.0/help/816"
         }
 }
 

@@ -30,6 +30,11 @@ import User.changePassword
 
 import Service.uploadfile
 
+import Group.attribute,Group.manage
+
+import ApiLib.list
+
+
 
 handlers = [
             # 新闻
@@ -71,13 +76,17 @@ handlers = [
             (r"/o2b/v1.0.0/order/returns", Order.Returns.list.info),
             (r"/o2b/v1.0.0/order/returns/upload", Service.uploadfile.Handler),
             
-
+            #圈子
+            (r"/o2b/v1.0.0/group/attribute", Group.attribute.info),
+            (r"/o2b/v1.0.0/group", Group.manage.info),            
+            
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
             #服务
             (r"/o2b/v1.0.0/service/uploadfile", Service.uploadfile.Handler),
             
             #其它
+            (r"/o2b/v1.0.0/apis", ApiLib.list.Handler),
             (r".*", Framework.Base.Base404Handler),
             
 
