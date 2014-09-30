@@ -4,7 +4,7 @@ import config
 
 class info(WebRequestHandler):
     
-    def get(self):  # 查询用户退换货信息
+    def get(self):  # 查询[所有|指定]的圈子
         
         try :
             super().get(self)
@@ -63,7 +63,7 @@ class info(WebRequestHandler):
                     'active'       : 0,                                  # 活跃度
                     'status'       : 'W',                                # 状态：等待申批
                     'membership'   : 1  ,                                # 成员数为1
-                    'isPrivate'    : 'Y' if objData["pwd"] else 'N',  # 如果有密码为Y否则为N
+                    'isPrivate'    : 'Y' if objData["pwd"] else 'N',     # 如果有密码为Y否则为N
                     'password'     : objData["pwd"],                     # 私有密码
                     'isDelete'     : 'Y'
                 }
@@ -71,24 +71,36 @@ class info(WebRequestHandler):
                 raise BaseError(801) # 参数错误
             
                 
-            #1.1 插入 tbOrder;
-           
             
             db=self.openDB()
             db.begin()
-            
+
+            #1.1 将圈子信息插入 tbGroup;
             gid=db.insert('tbGroups',insertData,commit=False)
             
             if gid<0 : raise BaseError(702) # SQL操作失败
             
-            #1.2 更改tbOrderList.status=310
+            #1.2 将用户信息插入到 tbGroupUser；
+            guData = {
+                'user'            : user,
+                'groupid'         : gid,
+                'joinTime'        : self._now_time_,
+                'role'            : 'O',                 # O - 圈子所有者
+                'isDelete'        : 'N'
+            }
+            id = db.insert('tbGroupUser',guData,commit=False)
+
+            ''' 
+            以下代码可以废弃
+            #1.3 将tbUser表中的lastGroup更新为新建圈子的id
             updateData={
                 'lastGroupId':gid, 
                 'updateTime':self._now_time_,
                 'updateUser':user
             }
             db.updateByPk('tbUser',updateData,user,pk='user',commit=False)            
-
+            '''
+            
             db.commit()
             self.closeDB()
         
@@ -102,3 +114,39 @@ class info(WebRequestHandler):
                         
         except BaseError as e:
             self.gotoErrorPage(e.code)
+
+
+    def patch(self):  # 管理圈子
+        try :
+            super().post(self)
+            user=self.getTokenToUser()        
+            objData=self.getRequestData()
+            
+            try :
+                
+                # 圈子信息
+                objData={
+                    'gid'       : int(objData["gid"]),               # 圈子id
+                    'operation' : objData["opt"],                    # 圈子操作
+                }
+            except :
+                raise BaseError(801) # 参数错误
+            
+            db=self.openDB()
+
+            #1.3 将tbUser表中的lastGroup更新为新建圈子的id
+            updateData={
+                'status':objData['operation'], 
+                'updateTime':self._now_time_,
+                'updateUser':user
+            }
+            ur=db.update('tbGroup',updateData,updateData,{"id":objdata["gid"],"owner":user})      
+            if ur<=0 :BaseError(802) # 没有数据找到
+                
+            self.closeDB()
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+                        
+    def delete(self):  # 解散圈子,须系统管理员
+        pass

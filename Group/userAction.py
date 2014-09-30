@@ -2,10 +2,10 @@ from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
 
 # 关注    
-class hFollow(WebRequestHandler):
+class Handler(WebRequestHandler):
         
-    # 加关注
-    def post(self,code):
+    # 加入圈子
+    def post(self,groupid):
         try :
             super().post(self)
             user=self.getTokenToUser()
@@ -15,28 +15,28 @@ class hFollow(WebRequestHandler):
 
             #1.1 插入到关注库 tbProductFollower；
             followerData = {
-                'user'       : user,
-                'pCode'      : code,
-                'followtime' : '{{now()}}',
-                'isDelete'   : 'N'
+                'user'            : user,
+                'groupid'         : groupid,
+                'joinTime'        : self._now_time_,
+                'role'            : 'U',                 # 普通用户
+                'isDelete'        : 'N'
             }
-            id = db.insert('tbProductFollower',followerData,commit=False)            
+            id = db.insert('tbGroupUser',followerData,commit=False)            
                
             if id < 0  :
                 raise BaseError(702) # SQL 执行失败
             
-            #1.2 更改tbUser.totalFollow+1,tbProdcutList.totalFollow+1
-            updateData = { 'totalFollow':'{{totalFollow+1}}' }
-            db.updateByPk('tbUser',updateData,user,pk='user',commit=False)
-            db.updateByPk('tbProductList',updateData,code,pk='code',commit=False)
+            #1.2 更改 tbGroup.membership+1
+            updateData = { 'membership':'{{membership+1}}' }
+            db.updateByPk('tbGroup',updateData,gid,commit=False)
 
             db.commit()
 
-            # 返回最后的关注数
+            # 返回最后的圈子人数
             conditions = {
-                'select' : 'code,totalFollow'
+                'select' : 'id,name,membership'
             }
-            row_object = db.getToObjectByPk('tbProductList',conditions,code,pk='code')
+            row_object = db.getToObjectByPk('tbGroup',conditions,gorupid)
             
             self.closeDB()
             
@@ -46,8 +46,8 @@ class hFollow(WebRequestHandler):
             self.gotoErrorPage(e.code)
             
     
-    # 取消关注
-    def delete(self,code):
+    # 退出圈子
+    def delete(self,groupid):
         try :
             super().delete(self)
             user=self.getTokenToUser()
@@ -55,34 +55,25 @@ class hFollow(WebRequestHandler):
             db=self.openDB()
             db.begin()
             
-            #1.1 从关注库删除 tbProductFollower,这里有问题会产生表锁
-            updateData = { 'isDelete':'Y' }
-            whereData = {
-                'user'  : user,
-                'pcode' : code
-            }
-            db.update('tbProductFollower',updateData,whereData,commit=False,lock=False) #暂不加锁，规避表锁问题
+            #1.1 将 tbGroupUser.quitTime=当前时间 tbGroupUser.isDelete='Y'
+            updateData = { 'quittime':self._now_time_,'isDelete':'Y' }
+            whereData  = {'user':user , 'id':groupid }
+            rc=db.update('tbProductFollower',updateData,whereData,commit=False,lock=False) #不加锁，规避表锁问题
             
-            data={
-                'totalFollow':'{{if(totalFollow>0,totalFollow-1,0)}}'
-            }
+            if rc<=0 :
+                raise BaseError(802)  # 没有找到
+                
+            #1.2 更改 tbGroup.membership-1
+            data={'membership':'{{if(membership>1,membership-1,1)}}'}            
+            db.updateByPk('tbGroup',updateData,gid,commit=False)
             
-            #1.2 更改tbUser.totalFollow-1
-            db.updateByPk('tbUser',data,user,pk='user',commit=False)
-            
-            #1.3 更改tbProdcutList.totalFollow-1
-            db.updateByPk('tbProductList',data,code,pk='code',commit=False)
-            
-          
             db.commit()
             
-            # 返回最后的关注数
-            returnData={
-                'select' : 'code,totalFollow',
-                'where'  : 'code="%s"' % (code)
+            # 返回最后的圈子人数
+            conditions = {
+                'select' : 'id,name,membership'
             }
-            
-            row_object=db.getToObjectByPk('tbProductList',returnData,code,pk='code')
+            row_object = db.getToObjectByPk('tbGroup',conditions,gorupid)            
             
             self.closeDB()
             self.response(row_object)
@@ -92,7 +83,7 @@ class hFollow(WebRequestHandler):
 
 
     
-    # 查询用户是否关注了某产品
+    # 用户查询自己加入的圈子
     def get(self,code):
         try: 
             super().get(self)

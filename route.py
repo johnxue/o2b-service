@@ -30,7 +30,7 @@ import User.changePassword
 
 import Service.uploadfile
 
-import Group.attribute,Group.manage
+import Group.attribute,Group.manage,Group.userAction
 
 import ApiLib.list
 
@@ -78,7 +78,9 @@ handlers = [
             
             #圈子
             (r"/o2b/v1.0.0/group/attribute", Group.attribute.info),
-            (r"/o2b/v1.0.0/group", Group.manage.info),            
+            (r"/o2b/v1.0.0/group", Group.manage.info),
+            (r"/o2b/v1.0.0/group/([0-9]+)", Group.userAction.Handler),            
+            
             
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),

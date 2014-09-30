@@ -526,6 +526,12 @@ URI: https://192.168.1.210/o2b/v1.0.0/order/returns/$swid
 注：
 $id - 退换货id
 $swapOrderNo - 退换货单号
+              {
+                 "attribute": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "sort"     : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+              }
+ 
 $orderNo     - 订单号
 $oid         - 订单id
 $pcode       - 产品代码
@@ -732,9 +738,20 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
    URI: https://192.168.1.210/o2b/v1.0.0/adSense/groups/3
 
 
-
 4.9 圈子
-4.9.1 创建圈子
+4.9.1 圈子类别
+URI: https://192.168.1.210/o2b/v1.0.0/group/attribute
+输入：
+     http header：Authorization
+     方法:get 
+
+输出：
+{
+     "status": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+     "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+}
+ 
+4.9.2 创建圈子
 URI: https://192.168.1.210/o2b/v1.0.0/group
 输入：
      http header：Authorization
@@ -746,14 +763,66 @@ URI: https://192.168.1.210/o2b/v1.0.0/group
        "cat"  : "圈子分类Code",
        "pwd"  : "圈子私有密码"
      }
-          
-
 输出：http status : 201
      {
        'group'   :  '圈子名称',
        'groupid' :  '圈子id'
      }
 
+4.9.3 管理圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group
+输入：
+     http header：Authorization
+     方法:patch 
+     {
+       "gid" : "圈子id",
+       "opt" : "行为码",        #圈子管理者的行为码为：open|clsoe|pause|nopwd
+     }
+     
+输出：http status : 201
+注：只有圈子的创建者可以管理圈子
+行为码说明：
+   open  - 将close状态的圈子开启
+   close - 关闭圈子（关闭圈子即冻结，非解散圈子，指不准许用户加入该圈子，也不准许圈子里的用户新增、删除、更改帖子）
+   pause - 暂停新用户的加入
+   nopwd - 非私有圈子
+     
+
+4.9.4 用户加入圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+     http header：Authorization
+     方法:post
+输出：http status : 201
+{
+  "id"         : 圈子id,
+  "name"       : "圈子名称",
+  "membership" : 圈子成员数量
+}
+
+4.9.5 用户退出圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+     http header：Authorization
+     方法:delete
+输出：http status : 201
+{
+  "id"         : 圈子id,
+  "name"       : "圈子名称",
+  "membership" : 圈子成员数量
+}
+
+4.9.6 我的圈子
+URI: https://192.168.1.210/o2b/v1.0.0/user/group
+输入：
+     http header：Authorization
+     方法:get
+输出：http status : 201
+{
+  "id"         : 圈子id,
+  "name"       : "圈子名称",
+  "membership" : 圈子成员数量
+}
 
 
 
