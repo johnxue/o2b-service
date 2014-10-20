@@ -9,26 +9,38 @@ class Handler(WebRequestHandler):
         try :
             super().post(self)
             user=self.getTokenToUser()
-        
+            objData=self.getRequestData()
+            try :
+                vm=objData['vm']
+            except:
+                vm=''
+                
+            st=objData['st'].upper()
+            if (st=='WT' and vm=='') or (st not in ['WT','OK']):
+                raise BaseError(801) # 参数错误
+                
             db=self.openDB()
             db.begin()
 
-            #1.1 插入到关注库 tbProductFollower；
-            followerData = {
+            #1.1 插入到圈子用户库 tbGroupUser；
+            guData = {
                 'user'            : user,
                 'groupid'         : groupid,
                 'joinTime'        : self._now_time_,
-                'role'            : 'U',                 # 普通用户
+                'role'            : 'W' if st=='WT' else 'U',                  # 普通用户
+                'status'          : st, #ST有两种状态: WT-等待验证 OK-验证通过，可以发言
+                'verifyMessage'   : vm,
                 'isDelete'        : 'N'
             }
-            id = db.insert('tbGroupUser',followerData,commit=False)            
+            
+            id = db.insert('tbGroupUser',guData,commit=False)            
                
             if id < 0  :
                 raise BaseError(702) # SQL 执行失败
             
-            #1.2 更改 tbGroup.membership+1
+            #1.2 更改 tbGroups.membership+1
             updateData = { 'membership':'{{membership+1}}' }
-            db.updateByPk('tbGroup',updateData,gid,commit=False)
+            db.updateByPk('tbGroups',updateData,groupid,commit=False)
 
             db.commit()
 
@@ -36,7 +48,7 @@ class Handler(WebRequestHandler):
             conditions = {
                 'select' : 'id,name,membership'
             }
-            row_object = db.getToObjectByPk('tbGroup',conditions,gorupid)
+            row_object = db.getToObjectByPk('tbGroups',conditions,groupid)
             
             self.closeDB()
             
@@ -55,17 +67,19 @@ class Handler(WebRequestHandler):
             db=self.openDB()
             db.begin()
             
+            #import pdb
+            #pdb.set_trace()
             #1.1 将 tbGroupUser.quitTime=当前时间 tbGroupUser.isDelete='Y'
             updateData = { 'quittime':self._now_time_,'isDelete':'Y' }
-            whereData  = {'user':user , 'id':groupid }
-            rc=db.update('tbProductFollower',updateData,whereData,commit=False,lock=False) #不加锁，规避表锁问题
+            whereData  = {'user':user , 'groupid':groupid }
+            rc=db.update('tbGroupUser',updateData,whereData,commit=False,lock=False) #不加锁，规避表锁问题
             
             if rc<=0 :
                 raise BaseError(802)  # 没有找到
                 
             #1.2 更改 tbGroup.membership-1
-            data={'membership':'{{if(membership>1,membership-1,1)}}'}            
-            db.updateByPk('tbGroup',updateData,gid,commit=False)
+            updateData={'membership':'{{if(membership>1,membership-1,1)}}'}            
+            db.updateByPk('tbGroups',updateData,groupid,commit=False)
             
             db.commit()
             
@@ -73,7 +87,7 @@ class Handler(WebRequestHandler):
             conditions = {
                 'select' : 'id,name,membership'
             }
-            row_object = db.getToObjectByPk('tbGroup',conditions,gorupid)            
+            row_object = db.getToObjectByPk('tbGroups',conditions,groupid)            
             
             self.closeDB()
             self.response(row_object)
@@ -83,33 +97,28 @@ class Handler(WebRequestHandler):
 
 
     
-    # 用户查询自己加入的圈子
-    def get(self,code):
-        try: 
+    # 用户查询默认用户在圈子中的权限
+    def get(self,gid):
+        try :
             super().get(self)
             user=self.getTokenToUser()
-
+                   
             db=self.openDB()
             
-            # 返回最后的关注数
-            pl_object = db.getToObjectByPk('tbProductList',{'select':'code,totalFollow'},code,pk='code')            
-            
-            
-            #1.1 查询 tbProductFollower 表；
-            conditions = {
-                'select' : 'user,pcode',
-                'where'  : 'user="%s" and pcode="%s" and isDelete in ("N","",Null)' % (user,code)
+            #1. 查询用户加入的所有圈子，返回圈子gid
+            conditions={
+                'select' : 'groupid,user,role,status',
+                'where'  : "user='%s' and groupid=%s and (isDelete is Null or isDelete<>'Y')" % (user,gid)
             }
-            pf_List = db.getAllToList('tbProductFollower',conditions)            
-            
-            if pf_List :
-                pl_object[user]='YES'
-            else :
-                pl_object={}
-                pl_object[user]='NO'
-
+            user_Role = db.getToObjectByPk('tbGroupUser',conditions)
             self.closeDB()
-            self.response(pl_object)
-                        
+            
+            #2. 错误处理
+            if len(user_Role)==0 :
+                raise BaseError(802) # 没有找到数据                    
+                
+            #3. 打包成json object
+            rows = {'UserGroupRole' : user_Role }
+            self.response(rows)
         except BaseError as e:
             self.gotoErrorPage(e.code)

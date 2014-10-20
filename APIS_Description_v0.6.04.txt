@@ -747,8 +747,9 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/attribute
 
 输出：
 {
-     "status": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+     "status"   : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
      "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+     "action"   : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
 }
  
 4.9.2 创建圈子
@@ -758,41 +759,202 @@ URI: https://192.168.1.210/o2b/v1.0.0/group
      方法:POST 
      参数:
      {
-       "name" : "圈子名称",
-       "desc" : "圈子描述",
-       "cat"  : "圈子分类Code",
-       "pwd"  : "圈子私有密码"
+       "name"    : "圈子名称",
+       "cat"     : "圈子分类Code",
+       "join"    : "Y|N",  加入权限验证：'Y'代表需要验证加入，'N'代表不需要验证加入
+       "cnt"     : "Y|N",  内容权限验证: 'Y'代表圈内可见，'N'代表所有人可见
      }
 输出：http status : 201
      {
        'group'   :  '圈子名称',
        'groupid' :  '圈子id'
      }
-
-4.9.3 管理圈子
+     
+     
+4.9.3 查询所有圈子或指定用户的圈子（我创建的圈子）
 URI: https://192.168.1.210/o2b/v1.0.0/group
 输入：
      http header：Authorization
-     方法:patch 
-     {
-       "gid" : "圈子id",
-       "opt" : "行为码",        #圈子管理者的行为码为：open|clsoe|pause|nopwd
-     }
+     方法:get 
+     查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     u = all|hot                [可选，all为平台所有圈子，hot为平台热门圈子，不选为查询缺省用户的所有创建圈子]
+                                      all|hot 是只返回状态为 open 和 pasue 的信息
+     g = 圈子id                  [可选，查具体圈子id时使用]
      
+输出：http status : 200
+{ "MyGroups|AllGroups|HotGroups|MyGroup":[
+     [$id,$name,$membership,$totalTopic,$status_code,$status,$isVerifyJoin,$isPrivate],
+     ...,
+     [...]
+   ]
+}
+注：  
+  "id"          : "圈子id",
+  "name"        : "圈子名称",
+  "membership"  :  成员数，
+  "totalTopic"  :  话题数，
+  "status_code" :  圈子状态码,
+  "status"      : "圈子状态"
+  "isVerifyJoin": "加入权限 Y|N"
+  "isPrivate"   : "内容权限 Y|N"
+  
+当查询所有圈子时，只显示圈子状态为正常状态及已暂停的圈子
+当查询我的圈子时，显示所有状态的圈子
+   
+4.9.4 上传圈子头像
+URI: https://192.168.1.210/o2b/v1.0.0/group/header
+输入：
+     http header：Authorization
+     方法:patch
+     参数:
+	gid     = "圈子id"
+	picture     = "文件名"  (类型为 file)
+     
+输出： http status : 201
+{
+"url":"文件所在的路径",
+"filename": "文件名"
+}
+
+4.9.5 设置圈子信息
+URI: https://192.168.1.210/o2b/v1.0.0/group
+输入：
+     http header：Authorization
+     方法:put
+     {
+       "gid"  : "圈子id",
+       "join" : "Y|N",
+       "cnt"  : "Y|N",
+       "ntc"  : "公告信息"
+     }
 输出：http status : 201
+注： gid  圈子id
+    join 加入权限验证：'Y'代表需要验证加入，'N'代表不需要验证加入
+    cnt  内容权限验证: 'Y'代表圈内可见，'N'代表所有人可见
+
+
+4.9.6 查询某圈子的所有用户
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+    http header：Authorization
+    方法:get
+    查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     s = 'NO'                   [可选,NO为已被禁言的用户]
+     role = 'H|W'               [可选，无H为显示除黑名单H及验证用户W外的所有用户O,S,U]
+     
+输出：http status : 200
+{ "GroupUsers":[
+     [$id,$user,$role_code,$role,$joinTime,$lasttime,$totaltopic],
+     ...,
+     [...]
+   ]
+}
+注：
+$id          ： id
+$user        : 用户名
+$role_code   : 角色代码
+$role        : 角色
+$joinTime    : 加入圈子时间
+$lasttime    : 最后一次访问时间
+$totaltopic  : 圈内话题数
+
+
+4.9.7 设置/取消圈内用户的管理员身份
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+    http header：Authorization
+    方法: patch
+    参数：
+    {
+      "guids" : "圈与用户关系id1,id2,...,idn",
+      "role" : "S|U" 
+    }
+输出：http status : 204 操作成功，无返回
+注: "role" : "S"-管理员代码 "U"-普通用户代码，即role置"S"时用户得到管理员身份，置"U"时用户取消管理员身份
+    guid可识别userId
+
+4.9.8 将圈内用户加入/取消黑名单
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+    http header：Authorization
+    方法: patch
+    参数：
+    {
+      "guids" : "圈与用户关系id,id2,...,idn",
+      "role" : "H|U" 
+    }
+输出：http status : 204 操作成功，无返回
+注: "role" : "H"-已拉黑，拉黑用户不能进入该圈子 "U"-普通用户代码
+    guid可识别userId
+
+4.9.9 将用户踢出圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+    http header：Authorization
+    方法: delete
+    参数：
+    {
+      "guid" : "id",
+      "cmt"  : "踢出理由" 
+    }
+输出：http status : 204 操作成功，无返回
+
+4.9.10 启用/设置用户禁言
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+    http header：Authorization
+    方法: patch
+    参数：
+    {
+      "guids"   : "圈与用户关系id1,id2,...,idn",
+      "st"     : "NO|OK" 
+    }
+输出：http status : 204 操作成功，无返回
+注: "status" : "NO"-禁言，不能发帖 "OK"-解除禁言，可以发帖
+
+4.9.11 审核通过|驳回
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+输入：
+    http header：Authorization
+    方法: patch
+    参数：
+    {
+      "vids"    : "待审核的圈子与用户关系id1,id2,...,idn",
+      "role"   : "U"
+      "st"     ： "OK|NP" 
+    }
+输出：http status : 204 操作成功，无返回
+注: "status" :  "OK"-正常状态，可以发帖，"NP"-驳回并删除
+
+
+4.9.X 设置圈子状态 （平台管理员功能）
+
 注：只有圈子的创建者可以管理圈子
-行为码说明：
-   open  - 将close状态的圈子开启
-   close - 关闭圈子（关闭圈子即冻结，非解散圈子，指不准许用户加入该圈子，也不准许圈子里的用户新增、删除、更改帖子）
-   pause - 暂停新用户的加入
-   nopwd - 非私有圈子
+行为码说明：行为码通过表tbGroupAction获得，URI为:https://192.168.1.210/o2b/v1.0.0/group/attribute
+   open    - 将close状态的圈子开启
+   close   - 关闭圈子（关闭圈子即冻结，非解散圈子，指不准许用户加入该圈子，也不准许圈子里的用户新增、删除、更改帖子）
+   pause   - 暂停新用户的加入
+   public  - 开放加入
+   private - 私有圈子，授权用户加入
      
 
-4.9.4 用户加入圈子
-URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+
+4.9.12 用户加入圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/user
 输入：
      http header：Authorization
      方法:post
+
+参数：
+    {
+      "st"    : "状态码 WT|OK" ,WT - 等待验证 
+      "vm"    : "验证申请理由"  ,当st=WT时，vm必须有值
+    }     
+
 输出：http status : 201
 {
   "id"         : 圈子id,
@@ -800,8 +962,26 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
   "membership" : 圈子成员数量
 }
 
-4.9.5 用户退出圈子
-URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
+4.9.13 得到用户在某圈子中的权限
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/user
+输入：
+     http header：Authorization
+     方法:get
+输出：http status : 200
+{
+  "groupid" : 圈子id,
+  "user"    : "用户名",
+  "role"    : "用户权限,O|S|U|H"
+  "status"  : 状态，状态为UE-用户退出 KO-踢出 WT-等待审核 OK-正常 NO-禁言 NP-驳回不通过
+}
+注：O - 圈子拥有者
+   S - 圈子管理者
+   U - 圈子普通用户
+   H - 黑名单用户
+      
+
+4.9.14 用户退出圈子
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/user
 输入：
      http header：Authorization
      方法:delete
@@ -812,19 +992,170 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/$gid
   "membership" : 圈子成员数量
 }
 
-4.9.6 我的圈子
+
+4.9.15 我的圈子
 URI: https://192.168.1.210/o2b/v1.0.0/user/group
 输入：
      http header：Authorization
-     方法:get
-输出：http status : 201
-{
-  "id"         : 圈子id,
-  "name"       : "圈子名称",
-  "membership" : 圈子成员数量
+     方法:get 
+     查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     
+输出：http status : 200
+{ "MyJoinGroups":[
+     [$id,$name,$role,$membership,$totalTopic],
+     ...,
+     [...]
+   ]
 }
+注：  
+  "id"          : "圈子id",
+  "name"        : "圈子名称",
+  "role"        : "用户在圈子中的权限"
+  "membership"  :  成员数，
+  "totalTopic"  :  话题数
+
+返回的是所有圈子状态为正常状态及已暂停的圈子，
+圈子按用户在圈子中的权限+时间顺序倒排，即用户自己创建的圈子排在第一位，
+其次是普通权限圈子
 
 
+4.9.16 圈子详情
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/info
+输入：
+     http header：Authorization
+     方法:get 
+     
+输出：http status : 200
+{
+    "Administrator": [
+        [guid,user,role_code,role,nickname,header],
+	...,
+        [guid,user,role_code,role,nickname,header],
+    ],
+    "Group": {
+        "name"          : "圈名",
+	"createTime"    : "创建时间",
+	"notice"        : "公告"，
+        "status_code"   : "圈子状态",
+        "isVerifyJoin"  : "是否需要验证加入 Y|N",
+        "gid"           : 圈子id,
+        "cat"           : "圈子类型",
+        "totalTopic"    : 圈子话题数,
+        "header"        : "圈子头像",
+        "isPrivate"     : "是否私有",
+        "status"        : "圈子状态",
+        "membership"    : 圈子成员数
+    }
+}
+注：
+guid       组用户权限
+user       用户名
+role_code  角色代码
+role       角色
+nickname   昵称
+header     用户头像 
+
+4.9.17
+
+4.9.18 话题
+4.9.18.1 查看圈子下的所有话题
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
+输入：
+     http header：Authorization
+     方法:get
+     查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+输出：
+     {
+        'gid'    : 圈子id,
+	'count'  : 圈子总话题数,
+        'topics' : [
+	   [tid,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status],
+	   ...
+	   [tid,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status]
+         ]
+     }
+注：
+gid        圈子id,
+count      圈子的总话题数,
+tid        话题id,
+user       用户名,
+nickname   昵称,
+header     用户头像，
+topic      帖子名称
+contents   话题内容（前200个字）
+createTime 创建时间,
+viewCount  浏览数,
+replyCount 回帖子数
+isTop      是否置顶
+isEssence  是否精华
+status_code 状态码
+status      状态
+
+4.9.18.2 查看对某话题的详情（含话题内容，无回复）
+URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
+输入：
+     http header：Authorization
+     方法:get
+输出：
+     {
+	gid        : 圈子id
+        tid        : 话题id
+	user       : 用户名
+	nickname   : 昵称
+	header     : 用户头像
+	topic      : 帖子名称
+	contents   : 帖子内容
+	createTime : 创建时间
+	viewCount  : 浏览数
+	replyCount : 回帖子数
+	isTop      : 是否置顶
+	isEssence  : 是否精华
+     }
+
+
+4.9.18.2 查看对某话题的评论（含回帖）
+URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid/comment
+输入：
+     http header：Authorization
+     方法:get
+     查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+输出：
+    {
+      coments: [
+	        {
+	         comment: [cid,tid,gid,user,nickname,header,contents,createTime,status_code,status],
+		 reply  : [
+			    [rid,cid,tid,gid,user,nickname,header,contents,createTime,status_code,status],
+	       	  	    [...],
+			    ...,
+			    [...]
+			 ]
+               },
+               {...},
+               ...,
+               {...},
+             ],
+      count : 话题的总评论数
+     }
+注：
+comment    ：评论
+rid        : 回复id
+cid        : 评论id
+tid        : 话题id
+user       : 用户名
+nickname   : 昵称
+header     : 用户头像
+topic      : 帖子名称
+contents   : 帖子内容
+createTime : 创建时间
+status_code: 状态码
+status     : 状态
 
 4.10 用户
 4.10.1 查看用户信息
@@ -852,10 +1183,9 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/header
      
 输出： http status : 201
 {
-"path":"文件所在的路径",
+"url":"文件所在的路径",
 "filename": "文件名"
 }
-  
 
 
 4.10.3 用户变更密码
@@ -906,7 +1236,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
 
 输出： http status : 201
 {
-"path":"文件所在的路径",
+"url":"文件所在的路径",
 "filename": "文件名"
 }
   

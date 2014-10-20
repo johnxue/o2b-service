@@ -19,18 +19,27 @@ import News.detail
 
 import ShoppingCart.list
 
-import Order.list
-import Order.detail
-import Order.attribute
+from Order import attribute,list,detail
+#import Order.list
+#import Order.detail
+#import Order.attribute
+
 import Order.Returns.list
 
 
 import User.follow
 import User.changePassword
 
-import Service.uploadfile
+#from Service import uploadfile,RichEditor
+import Service.uploadfile,Service.writeHtml,Service.RichEditor
 
-import Group.attribute,Group.manage,Group.userAction
+#import Group.attribute,Group.list,Group.usermanage,Group.userAction,Group.userinfo,Group.groupinfo
+
+import Group.Topics.list
+import Group.Topics.detail
+import Group.Topics.commentDetail
+
+from Group import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
 
 import ApiLib.list
 
@@ -78,14 +87,30 @@ handlers = [
             
             #圈子
             (r"/o2b/v1.0.0/group/attribute", Group.attribute.info),
-            (r"/o2b/v1.0.0/group", Group.manage.info),
-            (r"/o2b/v1.0.0/group/([0-9]+)", Group.userAction.Handler),            
+            (r"/o2b/v1.0.0/group", Group.list.info),
+            (r"/o2b/v1.0.0/group/([0-9]+)", Group.usermanage.Handler),
+            (r"/o2b/v1.0.0/group/([0-9]+)/user", Group.userAction.Handler),
+            (r"/o2b/v1.0.0/group/([0-9]+)/info", Group.groupinfo.Handler),
+            (r"/o2b/v1.0.0/user/group", Group.userinfo.Handler),
+            
+            
+            #(r"/o2b/v1.0.0/group/([0-9]+)", Group.manage.Handler),
+            #(r"/o2b/v1.0.0/group/([0-9]+)/topic", Group.topic.Handler),
+            #(r"/o2b/v1.0.0/group/topic/([0-9]+)", Group.topic.Handler),
+            (r"/o2b/v1.0.0/group/header", Group.list.info),
+            
+            # 话题
+            (r"/o2b/v1.0.0/group/([0-9]+)/topics", Group.Topics.list.Handler),
+            (r"/o2b/v1.0.0/group/topics/([0-9]+)", Group.Topics.detail.Handler),
+            (r"/o2b/v1.0.0/group/topics/([0-9]+)/comment", Group.Topics.commentDetail.Handler),
             
             
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
             #服务
             (r"/o2b/v1.0.0/service/uploadfile", Service.uploadfile.Handler),
+            (r"/o2b/v1.0.0/service/EditHtml", Service.RichEditor.Handler),
+            
             
             #其它
             (r"/o2b/v1.0.0/apis", ApiLib.list.Handler),

@@ -111,6 +111,13 @@ class DB():
         # 根据条件查找记录
         return self.__query(table,criteria,True)
     
+
+
+    def exit(self,table,params={},join='AND'):
+        # 判断是否存在
+        return self.count(table,params,join) > 0
+
+# 公共的方法 -------------------------------------------------------------------------------------
     def count(self,table,params={},join='AND'):
         # 根据条件统计行数
         try :
@@ -122,12 +129,6 @@ class DB():
             return result[0] if result else 0
         except:
             raise BaseError(707)         
-
-    def exit(self,table,params={},join='AND'):
-        # 判断是否存在
-        return self.count(table,params,join) > 0
-
-# 公共的方法 -------------------------------------------------------------------------------------
 
     def getToListByPk(self,table,criteria={},id=None,pk='id'):
         # 根据条件查找记录返回List

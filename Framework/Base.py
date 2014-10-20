@@ -7,19 +7,22 @@ from easyOAuth.userinfo import Token
 
 # 屏幕非法链接
 class Base404Handler(tornado.web.RequestHandler):
-    def get(self):
+    def head(self,*args,**kwargs):
         self.set_status(404)
 
-    def post(self):
-        self.set_status(404)
-        
-    def put(self):
+    def get(self,*args,**kwargs):
         self.set_status(404)
 
-    def delete(self):
+    def post(self,*args,**kwargs):
         self.set_status(404)
         
-    def patch(self):
+    def put(self,*args,**kwargs):
+        self.set_status(404)
+
+    def delete(self,*args,**kwargs):
+        self.set_status(404)
+        
+    def patch(self,*args,**kwargs):
         self.set_status(404)
         
     
@@ -40,9 +43,12 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def options(self,__p1__=None,__p2__=None,__p3__=None,__p4__=None,__p5__=None):
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
-        self.set_header('Access-Control-Allow-Headers', 'app-key,app-secret,authorization,Content-type')
+        self.set_header('Access-Control-Allow-Headers', 'app-key,app-secret,authorization,Content-type,X_Requested_With')
+        #//header('Access-Control-Allow-Origin: http://www.baidu.com'); //设置http://www.baidu.com允许跨域访问
+        #//header('Access-Control-Allow-Headers: X-Requested-With,X_Requested_With'); //设置允许的跨域header                
     
-    def response(self,data=None,status=200):
+       
+    def response(self,data=None,status=200,angluar=True,callback=None):
 
         if status==200 : # 自动识别状态码
             callfun=inspect.stack()[1][3]
@@ -52,14 +58,18 @@ class WebRequestHandler(tornado.web.RequestHandler):
                 status = 204                                                      # DELETE,PUT,PATCH无返回时 - 204	
         
         self.set_status(status)
-        #if status==204 : return
-
         self.options()
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
         
         if data is not None :
-            self.write(")]}',\n")
-            self.write(json.dumps(data,cls=DecimalAndDateTimeEncoder,ensure_ascii=False))
+            if angluar : self.write(")]}',\n")
+            strJson=json.dumps(data,cls=DecimalAndDateTimeEncoder,ensure_ascii=False)
+            if callback :
+                self.set_header("Content-Type", "application/x-javascript")
+                #self._write_buffer=[escape.utf8(callback),"(",strJson,")"]
+                self.write(callback+"("+strJson+")")
+            else :
+                self.set_header("Content-Type", "application/json; charset=UTF-8")
+                self.write(strJson)
         self.finish()
         
     def getRequestHeader(self,header):
@@ -69,19 +79,24 @@ class WebRequestHandler(tornado.web.RequestHandler):
         self._db_=None
         self.checkAppKey()
         self._now_time_ = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
+
+    def head(self,*args,**kwargs):
+        self.__init()        
         
-        
-    def get(self,_p1_=None,_p2_=None,_p3_=None,_p4_=None,_p5_=None):
+    def get(self,*args,**kwargs):
         self.__init()
         
-    def post(self,_p1_=None,_p2_=None,_p3_=None,_p4_=None,_p5_=None):
+    def post(self,*args,**kwargs):
         self.__init()
         
-    def delete(self,_p1_=None,_p2_=None,_p3_=None,_p4_=None,_p5_=None):
+    def delete(self,*args,**kwargs):
         self.__init()
         
-    def patch(self,_p1_=None,_p2_=None,_p3_=None,_p4_=None,_p5_=None):
-        self.__init()    
+    def put(self,*args,**kwargs):
+        self.__init()
+        
+    def patch(self,*args,**kwargs):
+        self.__init()        
         
     def gotoErrorPage(self,error_code,help=False) :
         #在错误处理中如果数据库连接是打开发，应回滚并关闭,回滚前须提交的数据必须提交
@@ -107,9 +122,8 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def checkAppKey(self):
         if self.request.headers.get('app-key')!=config.App_Key :
             raise BaseError(601)
-        
-    def getTokenToUser(self):
-        token=self.request.headers.get('Authorization')
+
+    def _tokenToUser(self,token):
         if token is not None  :
             myToken=Token(config.redisConfig)
             try :
@@ -119,6 +133,22 @@ class WebRequestHandler(tornado.web.RequestHandler):
         else :
             raise BaseError(602) 
         return user
+
+
+    def getTokenToUser(self):
+        token=self.request.headers.get('Authorization')
+        return self._tokenToUser(token)
+    '''
+        if token is not None  :
+            myToken=Token(config.redisConfig)
+            try :
+                user=myToken.getUser(token).decode('utf-8')
+            except:
+                raise BaseError(602) #未登录授权的应用
+        else :
+            raise BaseError(602) 
+        return user
+    '''
     
 
     def getRequestData(self):

@@ -2,15 +2,13 @@ from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
 import config
 
-class info(WebRequestHandler):
-    
-    def get(self):  # 查询[所有|指定]的圈子
+class Handler(WebRequestHandler):
+    def get(self,gid=None):  # 查询圈子的信息，前提是该圈子属于查询用户
         
         try :
             super().get(self)
             
             user=self.getTokenToUser()        
-        
             # 分页
             offset=int(self.get_argument("o",default=0))
             rowcount=int(self.get_argument("r",default=1000))
@@ -20,21 +18,21 @@ class info(WebRequestHandler):
             
             #1. 查询退换货单；
             conditions={
-                'select' : ('id,swapOrderNo,orderNo,oid,pcode,pname,number,mode,description,'
-                            'createTime,updateTime,status,comment'),
-                'where' : 'user="%s"' % (user),
+                'select' : 'id,name,description,membership，totalTopic',
+                'where' : 'owner="%s"' % (user),
+                'order' : 'id desc',
                 'limit' : '%s,%s' % (offset,rowcount)
             }
-            rows_list=db.getAllToList('vwReturns',conditions)
+            group_list=db.getAllToList('tbGroups',conditions)
 
             self.closeDB()
             
             #2. 错误处理
-            if len(rows_list)==0 :
+            if len(group_list)==0 :
                 raise BaseError(802) # 没有找到数据                    
                 
             #3. 打包成json object
-            rows = {'swapOrder' : rows_list }
+            rows = {'myGroup' : group_list }
             self.response(rows)
              
         except BaseError as e:
@@ -109,6 +107,14 @@ class info(WebRequestHandler):
                 "group"    : objData["name"],
                 "id"       : gid
             }
+            
+            '''
+            
+            HMSET 
+            
+            
+            '''
+             
 
             self.response(rows)
                         

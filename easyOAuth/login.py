@@ -56,7 +56,7 @@ class Handler(WebRequestHandler):
             self.closeDB()
         
             if len(row)==0:
-                raise BaseError(602) # '602' - 用户名或密码错误.
+                raise BaseError(603) # '603' - 用户名或密码错误.
         
             passwd = row['password']
         
@@ -76,7 +76,8 @@ class Handler(WebRequestHandler):
             self.set_header('Access-Control-Allow-Origin','*')
             if callback_url != url :
                 self.set_header('Authorization', '')
-                self.set_header('status', 404)
+                raise BaseError(603) # '603' - 用户名或密码错误.
+                #self.set_header('status', 404)
                 return 
 
             authcode = appId+uid+iv+url+str(int(time.time()))

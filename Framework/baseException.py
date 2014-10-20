@@ -22,7 +22,13 @@ errorDic={
             "status":404,
             "message": "无法识别的用户名或密码",
             "help_document": "/oauth/v1.0.0/help/603"
-        },                  
+        },
+        604: {
+            "code": "604",
+            "status":404,
+            "message": "未授权的访问",
+            "help_document": "/oauth/v1.0.0/help/604"
+        },                          
         701: {
               "code": "701",
               "status":500,
@@ -112,6 +118,12 @@ errorDic={
             "status"        : 400,
             "message"       : "文件存贮失败！",
             "help_document" : "/o2b/v1.0.0/help/816"
+        },
+        890 : {
+            "code"          : "890",
+            "status"        : 400,
+            "message"       : "读 Config.json 配置文件失败！",
+            "help_document" : "/o2b/v1.0.0/help/890"            
         }
 }
 

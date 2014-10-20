@@ -58,9 +58,16 @@ imageConfig={
             'wide' : 1080,
             'size' : 2*1024*1024
         },             
-    'header'  : {
+    'userheader'  : {
         'path' : '/var/www/o2b/v1.0.0/app/images/header',
         'url'  : '/images/header',
+        'long' : 80,
+        'wide' : 80,
+        'size' : 1*512*1024
+        },
+    'groupheader'  : {
+        'path' : '/var/www/o2b/v1.0.0/app/images/group/header',
+        'url'  : '/images/group/header',
         'long' : 80,
         'wide' : 80,
         'size' : 1*512*1024
@@ -82,7 +89,8 @@ imageConfig={
     'temp' : {
         'path':'/var/www/o2b/v1.0.0/app/images/tmp',
         'url' :'/images/tmp'
-    }
+    },
+    'imageFileType': ['image/gif', 'image/jpeg', 'image/pjpeg', 'image/bmp', 'image/png', 'image/x-png']
 }
 
 DEBUG = True
