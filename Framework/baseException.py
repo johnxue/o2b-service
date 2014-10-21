@@ -119,6 +119,12 @@ errorDic={
             "message"       : "文件存贮失败！",
             "help_document" : "/o2b/v1.0.0/help/816"
         },
+        817 : {
+            "code"          : "817",
+            "status"        : 400,
+            "message"       : "文件移动失败！",
+            "help_document" : "/o2b/v1.0.0/help/817"
+        },        
         890 : {
             "code"          : "890",
             "status"        : 400,

@@ -88,7 +88,7 @@ imageConfig={
     },    
     'temp' : {
         'path':'/var/www/o2b/v1.0.0/app/images/tmp',
-        'url' :'/images/tmp'
+        'url' :'/images/tmp/{yyyy}{mm}{dd}'
     },
     'imageFileType': ['image/gif', 'image/jpeg', 'image/pjpeg', 'image/bmp', 'image/png', 'image/x-png']
 }

@@ -64,12 +64,12 @@ class info(WebRequestHandler):
                 raise BaseError(801) # 参数错误
             
             imgFileOld=config.imageConfig['temp']['path']+'/'+imgProblem
-            imgFileName='returns-'+swapOrderNo+'-'+imgProblem[12:]
+            imgFileName='returns-'+swapOrderNo+'-'+imgProblem[12:] # 取文件名imgFile.split('/').pop()
             imgFileNew=config.imageConfig['order.returns']['path']+'/'+imgFileName
             try :
                 os.rename(imgFileOld,imgFileNew) # os.rename只能同盘移动，否则就是拷贝速度
             except :
-                raise BaseError(801) # 参数错误
+                raise BaseError(817) # 文件移动失败
                 
             db=self.openDB()
             db.begin()

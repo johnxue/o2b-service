@@ -1157,6 +1157,53 @@ createTime : 创建时间
 status_code: 状态码
 status     : 状态
 
+
+4.9.18.3 圈子下新增话题
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
+输入：
+     http header：Authorization
+     方法:post
+     参数：
+     {
+       type    : 'group',
+       topic   : '话题Title',
+       summary : '话题摘要',
+       content : '话题内容'，
+       imgFiles : '话题内容中的图片列表',
+       status   : '话题状态' [可选]
+     }
+注： 1.imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+       如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+     2. status = OK|NR
+     OK-正常 NR-不准许回复,status为空字符串时与OK状态等同
+
+4.9.18.3 圈子下修改话题
+URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
+输入：
+     http header：Authorization
+     方法:put
+     参数：
+     {
+       type    : 'group',
+       topic   : '更改后的话题Title'|Null，
+       summary : '话题摘要'|Null,
+       content : '更改后话题内容'|Null，
+       imgFiles : '更改话题内容中的新增图片列表'|Null,
+       status   : '话题状态'   [可选]
+     }
+注： 1. topic/content/summary/imgFiles 没有发生修改时为Null
+    2. imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+    3. 如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+    4. status = OK|NR
+       OK-正常 NR-不准许回复,status为空字符串时与OK状态等同
+
+4.9.18.3 删除话题
+URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
+输入：
+     http header：Authorization
+     方法:delete
+  
+
 4.10 用户
 4.10.1 查看用户信息
 URI: https://192.168.1.210/o2b/v1.0.0/user/info

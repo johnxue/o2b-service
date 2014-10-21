@@ -1,19 +1,25 @@
-import tempfile
+import tempfile,os,time,logging,random
+import config
+from PIL import Image
+from Framework.Base  import WebRequestHandler,BaseError
+from mysql.connector import errors,errorcode
 
 # Image包安装： 
 # sudo apt-get install libtiff4-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev tcl8.5-dev tk8.5-dev python-tk  
 # pip3 install Pillow
 
-from PIL import Image
-import time
-import logging
-import config
-
-from Framework.Base  import WebRequestHandler,BaseError
-from mysql.connector import errors,errorcode
 
 class uploadfile:
-     
+    
+    # 删除一组文件，errPass为真时不对错误进行处理，为假时，不能删除文件时返回False
+    def delFiles(self,lstFiles,errPass=True) :
+        for f in lastFiles :
+            try:
+                os.remove(f)
+            except :
+                if not errPass : return False
+        return True
+    
     def uploadImages(self,uploadData):
         attribution  = uploadData['type'].lower()                 # 图像归属频道 HEADER|GROUPHEADER|PRODCUT.X|GROUP|
         maxImageSize = config.imageConfig[attribution]['size']    # 图片最大尺寸
@@ -60,8 +66,8 @@ class uploadfile:
         except IOError as error:
             logging.info(error)   # 进行日志记录，以防止黑客
             logging.info('+'*30 + '\n')
-            logging.info(self.request.headers)
-            logging.info('提交用户： '+user)
+            #logging.info(self.request.headers)
+            logging.info('非法图片格式，提交用户： '+user)
             tmp_file.close()
             raise BaseError(813) # 非法图片格式
         
@@ -74,7 +80,7 @@ class uploadfile:
         image_path = config.imageConfig[attribution]['path']                  # 路经从config中获得
         temp_url   = config.imageConfig['temp']['url']                        # 临时URL
         image_format = '.'+send_file['filename'].split('.').pop().lower()     # 文件格式后缀转小写
-        file_suffix='-' + str(int(time.time())) + image_format                # 拼文件后缀
+        file_suffix='-' + str(int(time.time())) + str(random.randint(1, 100000))+image_format   # 拼文件后缀
 
         '''
             指定存储目录进行存储，并产生规范的文件名。
@@ -84,7 +90,8 @@ class uploadfile:
             group       : group+'-'+user+'-'+group_id+'.jpg'            
         '''
         
-        temp_path  = config.imageConfig['temp']['path']                      # 临时目录
+        temp_path  = config.imageConfig['temp']['path']+'/'+time.strftime("%Y%m%d",time.localtime())  # 临时目录
+        temp_url   = config.imageConfig['temp']['url']                                                # 临时目录的URL
         
         if attribution=='header':
             temp_path  = config.imageConfig['header']['path']                # 临时目录 = 真实目录
@@ -104,10 +111,18 @@ class uploadfile:
             tmp_name='prodcut-'+code+'-'+attribution.split('.').pop().lower()+file_suffix
             
         try:
+            
+            # 如果临时目录不存在，则直接创建
+            if not os.path.exists(temp_path) : os.makedirs(temp_path)
+                
             im.save(temp_path+'/'+tmp_name)
             #关闭临时文件，关闭后临时文件自动删除
             tmp_file.close()
             
+            # 替换临时URL中的时间表示 
+            if '{yyyy}{mm}{dd}' in temp_url :
+                temp_url=temp_url.replace("{yyyy}{mm}{dd}",time.strftime("%Y%m%d",time.localtime()))
+
             info={
                 "url"      : temp_url,
                 "filename" : tmp_name,
