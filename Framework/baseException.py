@@ -83,6 +83,12 @@ errorDic={
             "message":"没有找到数据",
             "help_document":"/o2b/v1.0.0/help/802"
         },
+        803 : {
+                    "code": "803",
+                    "status":404,
+                    "message":"修改数据失败",
+                    "help_document":"/o2b/v1.0.0/help/803"
+        },        
         811 : {
             "code"          : "811",
             "status"        : 400,

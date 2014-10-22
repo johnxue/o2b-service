@@ -5,6 +5,7 @@ import re,json,os,datetime
 from Framework.Base  import BaseError
 import logging
 import config
+from Service import uploadfile
 
 
 '''
@@ -40,13 +41,12 @@ class Handler(WebRequestHandler):
             self.gotoErrorPage(e.code)
             
     # 用户修改话题
-    def post(self,tid):
+    def put(self,tid):
         try:
             super().post(self)
             user=self.getTokenToUser()
             objData=self.getRequestData()
             try:
-                cat=objData['type']
                 topic=objData['topic']
                 summary = objData['summary']
                 content=objData['content']
@@ -58,23 +58,15 @@ class Handler(WebRequestHandler):
             except :
                 raise BaseError(801) # 参数错误
             
-           
-            # 将临时图像文件移动到正式文件夹中
-            try :
-                if (imgFiles is not None) and (len(imgFiles)>0) :
-                    lstImg=imgFiles.split(',')
-                    for imgFile in lstImg :
-                        imgFile_Old=imgFile.replace("/images/tmp/",config.imageConfig['temp']['path']+'/')
-                        imgFileName=imgFile.split('/').pop()
-                        imgFile_New=config.imageConfig[cat]['path']+'/'+imgFileName
-                        os.rename(imgFile_Old,imgFile_New) # os.rename只能同盘移动，否则就是拷贝速度
-                        # 将content中的临时URL替换成最终的URL
-                        imgURL=config.imageConfig[cat]['url']+'/'+imgFileName
-                        content=content.replace(imgFile,imgURL)
-            except :
-                # 插入失败后删除成功移动的文件
-                self.delFiles(lstFiles)                
-                raise BaseError(817) # 文件移动失败     
+            oFileHtml={
+                'content':content,
+                'files':None
+            }           
+            if imgFiles is not None :
+                # 将临时图像文件移动到正式文件夹中,并更替Content里的图片链接为正式连接
+                oHuf=uploadfile.uploadfile()
+                # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+                oFileHtml=oHuf.preImagesAndHtml(imgFiles,content,'group')
             
             db=self.openDB()
             db.begin()
@@ -88,7 +80,7 @@ class Handler(WebRequestHandler):
             
             # 如果内容为None即不修改
             if topic   is not None : updateData['topic']    = topic
-            if content is not None : updateData['contents'] = content
+            if content is not None : updateData['contents'] = oFileHtml['content']
             if status  is not None : updateData['status']   = status
             if summary is not None : updateData['summary']  = summary
                 
@@ -96,8 +88,8 @@ class Handler(WebRequestHandler):
             db.close()
             
             if rowcount<0 :
-                # 更改失败后删除成功移动的文件
-                self.delFiles(lstFiles)                
+                # 插入失败后删除成功移动的文件
+                oHuf.delFiles(oFileHtml['files'])              
                 raise BaseError(802) # SQL执行没有成功,可能是user与tid不匹配，即用户只能删除自己的话题            
 
             self.response()
@@ -130,15 +122,3 @@ class Handler(WebRequestHandler):
         except BaseError as e:
             self.gotoErrorPage(e.code)
             
-    # 删除一组文件
-    def delFiles(self,lstFiles) :
-        for f in lstFiles :
-            try:
-                os.remove(f)
-            except :
-                pass
-
-         
-            
-        
-        

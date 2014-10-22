@@ -13,7 +13,7 @@ import config
 '''
 class Handler(WebRequestHandler):
     # 查询圈子某一话题的回帖
-    def get(self,tid=None):
+    def get(self,tid):
         try:
             # 分页
             super().get(self)
@@ -43,7 +43,7 @@ class Handler(WebRequestHandler):
             
             #2. 查询对评论的回复
             Select={
-                'select' : 'rid,cid,tid,gid,user,nickname,header,contents,createTime,status_code,status',
+                'select' : 'rid,cid,tid,gid,user,nickname,header,toReplyUser,toReplyNickname,contents,createTime,status_code,status',
                 'where'  : 'FIND_IN_SET(cid,"%s")' % (cids)
             }
             listReplyContent = db.getAllToList('vwGTCReply',Select,tid)
@@ -67,3 +67,60 @@ class Handler(WebRequestHandler):
             self.response(rows)
         except BaseError as e:
             self.gotoErrorPage(e.code)
+            
+    
+    # 新增对话题的评论    
+    def post(self,tid):
+        try:
+            super().post(self)
+            user=self.getTokenToUser()
+            objData=self.getRequestData()
+            try:
+                gid=objData['gid']
+                content=objData['content']
+                imgFiles=objData['imgFiles']
+                status ='OK'
+            except :
+                raise BaseError(801) # 参数错误
+            
+            oFileHtml={
+                'content':content,
+                'files':None
+            }            
+            
+            if imgFiles is not None :
+                # 将临时图像文件移动到正式文件夹中,并更替Content里的图片链接为正式连接
+                oHuf=uploadfile.uploadfile()
+                # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+                oFileHtml=oHuf.preImagesAndHtml(imgFiles,content,'group')     
+                
+            db=self.openDB()
+            db.begin()
+            
+            #1.1 插入评论
+            insertData={
+                'gid'        : gid,
+                'tid'        : tid,
+                'user'       : user,
+                'nickname'   : 'nickname',
+                'header'     : 'header',
+                'contents'   : content,
+                'createTime' : '{{now()}}',
+                'isDelete'   : 'N',
+                'status'     : status
+            }
+            cid=db.insert('tbGTComment',insertData)
+            db.close()
+            if cid<0 : 
+                # 插入失败后删除成功移动的文件
+                oHuf.delFiles(oFileHtml['files'])
+                raise BaseError(703) # SQL执行错误            
+
+            rows={
+                'cid' : cid
+            }
+            self.response(rows)
+                
+        except BaseError as e:
+            self.gotoErrorPage(e.code) 
+         

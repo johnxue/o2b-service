@@ -13,13 +13,38 @@ class uploadfile:
     
     # 删除一组文件，errPass为真时不对错误进行处理，为假时，不能删除文件时返回False
     def delFiles(self,lstFiles,errPass=True) :
-        for f in lastFiles :
+        for f in lstFiles :
             try:
                 os.remove(f)
             except :
                 if not errPass : return False
         return True
     
+    def preImagesAndHtml(self,imgFiles,content,cat):
+        # 预处理，将临时图像文件移动到正式文件夹中
+        try :
+            lstFiles=['']*0
+            if (imgFiles is not None) and (len(imgFiles)>0) :
+                lstImg=imgFiles.split(',')
+                for imgFile in lstImg :
+                    imgFile_Old=imgFile.replace("/images/tmp/",config.imageConfig['temp']['path']+'/')
+                    imgFileName=imgFile.split('/').pop()
+                    imgFile_New=config.imageConfig[cat]['path']+'/'+imgFileName
+                    os.rename(imgFile_Old,imgFile_New) # os.rename只能同盘移动，否则就是拷贝速度
+                    lstFiles.append(imgFile_New)       #成功移动的文件传入lstFiles
+                    # 将content中的临时URL替换成最终的URL
+                    imgURL=config.imageConfig[cat]['url']+'/'+imgFileName
+                    content=content.replace(imgFile,imgURL)
+            result={
+                'files'   : lstFiles,
+                'content'    : content
+            }            
+            return result
+        except :
+            # 移动失败后会将成功移动的文件删除
+            self.delFiles(lstFiles)
+            raise BaseError(817) # 文件移动失败  
+                
     def uploadImages(self,uploadData):
         attribution  = uploadData['type'].lower()                 # 图像归属频道 HEADER|GROUPHEADER|PRODCUT.X|GROUP|
         maxImageSize = config.imageConfig[attribution]['size']    # 图片最大尺寸

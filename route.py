@@ -38,6 +38,7 @@ import Service.uploadfile,Service.writeHtml,Service.RichEditor
 import Group.Topics.list
 import Group.Topics.detail
 import Group.Topics.commentDetail
+import Group.Topics.commentReply
 
 from Group import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
 
@@ -103,7 +104,7 @@ handlers = [
             (r"/o2b/v1.0.0/group/([0-9]+)/topics", Group.Topics.list.Handler),
             (r"/o2b/v1.0.0/group/topics/([0-9]+)", Group.Topics.detail.Handler),
             (r"/o2b/v1.0.0/group/topics/([0-9]+)/comment", Group.Topics.commentDetail.Handler),
-            
+            (r"/o2b/v1.0.0/group/topics/comment/([0-9]+)/reply", Group.Topics.commentReply.Handler),
             
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),

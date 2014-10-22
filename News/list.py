@@ -1,5 +1,6 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
+from Service import uploadfile
 
 class info(WebRequestHandler):
     def get(self):
@@ -38,42 +39,33 @@ class info(WebRequestHandler):
             super().post(self)
             user=self.getTokenToUser()
             objData=self.getRequestData()
+            
             try:
-                cat=objData['type']
                 title=objData['title']
                 author = objData['author']
                 summary = objData['summary']
                 source = objData['source']
                 content=objData['content']
                 imgFiles=objData['imgFiles']
-                status=objData['status']
                 try :
                     status =objData['status']
                 except :
-                    status ='OK'
+                    status ='NO'
+                    
+                try :
+                    iscomment =objData['iscomment']
+                except :
+                    iscomment ='Y'                
+                    
             except :
                 raise BaseError(801) # 参数错误
             
             
-            # 将临时图像文件移动到正式文件夹中
-            try :
-                lstFiles=['']*0
-                if (imgFiles is not None) and (len(imgFiles)>0) :
-                    lstImg=imgFiles.split(',')
-                    for imgFile in lstImg :
-                        imgFile_Old=imgFile.replace("/images/tmp/",config.imageConfig['temp']['path']+'/')
-                        imgFileName=imgFile.split('/').pop()
-                        imgFile_New=config.imageConfig[cat]['path']+'/'+imgFileName
-                        os.rename(imgFile_Old,imgFile_New) # os.rename只能同盘移动，否则就是拷贝速度
-                        lstFiles.append(imgFile_New)       #成功移动的文件传入lstFiles
-                        # 将content中的临时URL替换成最终的URL
-                        imgURL=config.imageConfig[cat]['url']+'/'+imgFileName
-                        content=content.replace(imgFile,imgURL)
-            except :
-                # 移动失败后会将成功移动的文件删除
-                self.delFiles(lstFiles)
-                raise BaseError(817) # 文件移动失败  
-            
+            # 将临时图像文件移动到正式文件夹中,并更替Content里的图片链接为正式连接
+            oHuf=uploadfile()
+            # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+            oFileHtml=oHuf.preImagesAndHtml(self,imgFiles,content,'news') 
+                   
             db=self.openDB()
             db.begin()
             
@@ -86,20 +78,21 @@ class info(WebRequestHandler):
                 'summary'    : summary,
                 'author'     : author,
                 'source'     : source,
-                'htmlContent': content,
+                'htmlContent': oFileHtml['content'],
                 'viewCount'  : 0,
                 'replyCount' : 0,
                 'createTime' : '{{now()}}',
                 'isDelete'   : 'N',
                 'topLevel'   : 0,
                 'CTR'        : 0,
-                'status'     : status
+                'status'     : status,
+                'iscomment'  : iscomment
             }
             newsId=db.insert('tbNews',insertData)
             db.close()
             if newsId<0 : 
                 # 插入失败后删除成功移动的文件
-                self.delFiles(lstFiles)
+                oHuf.delFiles(oFileHtml['files'])
                 raise BaseError(703) # SQL执行错误            
 
             rows={
@@ -109,5 +102,5 @@ class info(WebRequestHandler):
             self.response(rows)
             
         except BaseError as e:
-            self.delFiles(lstFiles)
+            oHuf.delFiles(oFileHtml['files'])
             self.gotoErrorPage(e.code) 

@@ -51,7 +51,6 @@ def main():
     tornado.ioloop.IOLoop.instance().start()
 
 
-
 def sslMain():  
     #if config.DEBUG :
     #    logging.basicConfig(filename=config.LOG_FILENAME,format=config.LOG_FORMAT,datefmt='%y-%m-%d %H:%M:%S',level=logging.DEBUG)
