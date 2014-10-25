@@ -90,7 +90,7 @@ class Handler(WebRequestHandler):
             self.response('OK')
             
             #将iAuthorization记录到Redis
-            myToken = Token(config.redisConfig)
+            myToken = Token(config.RedisConfig)
             myToken.saveToRedis(authcode,uid)
             
         except BaseError as e:

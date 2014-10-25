@@ -125,7 +125,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
 
     def _tokenToUser(self,token):
         if token is not None  :
-            myToken=Token(config.redisConfig)
+            myToken=Token(config.RedisConfig)
             try :
                 user=myToken.getUser(token).decode('utf-8')
             except:
@@ -140,7 +140,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
         return self._tokenToUser(token)
     '''
         if token is not None  :
-            myToken=Token(config.redisConfig)
+            myToken=Token(config.RedisConfig)
             try :
                 user=myToken.getUser(token).decode('utf-8')
             except:
@@ -193,7 +193,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
         token=self.request.headers.get('Authorization')
         if token is not None  :
             try :
-                myToken=Token(config.redisConfig)
+                myToken=Token(config.RedisConfig)
                 user=myToken.getUser(token).decode('utf-8')
                 myToken.saveToRedis(token,user)
                 time=36000

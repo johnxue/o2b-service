@@ -5,6 +5,7 @@ import re,json,os,datetime
 from Framework.Base  import BaseError
 import logging
 import config
+from Service import uploadfile
 
 
 '''
@@ -49,7 +50,7 @@ class Handler(WebRequestHandler):
             listReplyContent = db.getAllToList('vwGTCReply',Select,tid)
             db.close()
             
-            listCRContent=[{}]*intCountComment
+            listCRContent=[{}]*len(listCommentContent)
            
             for ci, comment in enumerate(listCommentContent):
                 listReply=[]
@@ -104,7 +105,7 @@ class Handler(WebRequestHandler):
                 'user'       : user,
                 'nickname'   : 'nickname',
                 'header'     : 'header',
-                'contents'   : content,
+                'contents'   : oFileHtml['content'],
                 'createTime' : '{{now()}}',
                 'isDelete'   : 'N',
                 'status'     : status

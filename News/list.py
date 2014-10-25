@@ -34,7 +34,7 @@ class info(WebRequestHandler):
 
 
     # 新增新闻  
-    def post(self,gid):
+    def post(self):
         try:
             super().post(self)
             user=self.getTokenToUser()
@@ -62,9 +62,9 @@ class info(WebRequestHandler):
             
             
             # 将临时图像文件移动到正式文件夹中,并更替Content里的图片链接为正式连接
-            oHuf=uploadfile()
+            oHuf=uploadfile.uploadfile()
             # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
-            oFileHtml=oHuf.preImagesAndHtml(self,imgFiles,content,'news') 
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,content,'news') 
                    
             db=self.openDB()
             db.begin()
@@ -72,8 +72,6 @@ class info(WebRequestHandler):
             #1.1 插入新闻
             insertData={
                 'createUser' : user,
-                'nickname'   : 'nickname',
-                'header'     : 'header',
                 'title'      : title,
                 'summary'    : summary,
                 'author'     : author,
@@ -102,5 +100,4 @@ class info(WebRequestHandler):
             self.response(rows)
             
         except BaseError as e:
-            oHuf.delFiles(oFileHtml['files'])
             self.gotoErrorPage(e.code) 

@@ -9,7 +9,7 @@ class Handler(WebRequestHandler):
         token = self.getRequestHeader('Authorization')
         if token is not None  :
             try :
-                myToken = Token(config.redisConfig)
+                myToken = Token(config.RedisConfig)
                 s       = myToken.delUser(token) # 成功删除应返回成功受影响的记录数
             except:
                 s = 0

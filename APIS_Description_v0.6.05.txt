@@ -726,10 +726,12 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
 	"summary"    : '新闻摘要',
 	"content"    : '新闻内容',
 	"iscomment"  : '是否允许评论, Y|N ', [可选，默认为Y]
-	"status"     : '状态 NO-只保存不提交审核|WT-提交审核’ [可选，默认值为 NO]
+	"status"     : '状态 NO-只保存不提交审核|WT-提交审核’ [可选，默认值为 NO],
+         "imgFiles"  : '话题内容中的图片列表'
     }
   输出： 新增新闻的id
   { id : xxx }
+  注：imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
   
 
 4.7.4. 更改新闻内容
@@ -741,10 +743,14 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
 	"source"     : '新闻来源',
 	"summary"    : '新闻摘要',
 	"content"    : '新闻内容',
-	"iscomment"  : '是否允许评论, Y|N ', [可选，默认为Y]
-	"status"     : '状态 NO-只保存不提交审核|WT-提交审核’ [可选，默认值为 NO]
+	"iscomment"  : '是否允许评论,
+	"status"     : '状态 NO-只保存不提交审核|WT-提交审核’,
+	"imgFiles"  : '话题内容中的图片列表'
+
     }
   输出： http status : 204 操作成功，无返回
+  注：imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+
 
 
 4.7.5. 开启或关闭新闻的评论状态
@@ -1164,8 +1170,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
      方法:get
 输出：
      {
-	gid        : 圈子id
-        tid        : 话题id
+        id         : 话题id
+        gid        : 圈子id
 	user       : 用户名
 	nickname   : 昵称
 	header     : 用户头像
@@ -1176,10 +1182,12 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
 	replyCount : 回帖子数
 	isTop      : 是否置顶
 	isEssence  : 是否精华
+	status_code: 状态码
+	status     : 状态说明
      }
 
 
-4.9.18.2 查看对某话题的评论（含回帖）
+4.9.18.3 查看对某话题的评论（含回帖）
 URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid/comment
 输入：
      http header：Authorization
@@ -1220,7 +1228,7 @@ status_code: 状态码
 status     : 状态
 
 
-4.9.18.3 圈子下新增话题
+4.9.18.4 圈子下新增话题
 URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
 输入：
      http header：Authorization
@@ -1241,7 +1249,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
      2. status = OK|NR
      OK-正常 NR-不准许回复,status为空字符串时与OK状态等同
 
-4.9.18.4 圈子下修改话题
+4.9.18.5 圈子下修改话题
 URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
 输入：
      http header：Authorization
@@ -1260,21 +1268,21 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
     4. status = OK|NR
        OK-正常 NR-不准许回复,status为空字符串时与OK状态等同
 
-4.9.18.5 删除话题
+4.9.18.6 删除话题
 URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
 输入：
      http header：Authorization
      方法:delete
 
 
-4.9.18.6 新增话题评论
+4.9.18.7 新增话题评论
 URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid/comment
 输入：
      http header：Authorization
      方法:post
      参数：
      {
-       gid     : '圈子id'
+       gid     : '圈子id',
        content : '评论内容'，
        imgFiles : '话题内容中的图片列表'
      }
@@ -1285,7 +1293,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid/comment
      如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
 
 
-4.9.18.7 新增评论回复
+4.9.18.8 新增评论回复
 URI: https://192.168.1.210/o2b/v1.0.0/group/topics/comment/$cid/reply
 输入：
      http header：Authorization
@@ -1294,7 +1302,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/comment/$cid/reply
      {
        gid     : '圈子id',
        tid     : '话题id',
-       touser  : '接收回复者’，
+       touser  : '接收回复者id’，
        tonick  : '接收回复者的昵称'
        content : '回复内容'，
      }

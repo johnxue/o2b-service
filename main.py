@@ -10,7 +10,7 @@ import logging
 import route
 
 
-import Framework.dbMysql,config
+import Framework.dbMysql,Framework.dbRedis,config
 
 from Framework.Base  import BaseError
 
@@ -18,7 +18,7 @@ from Framework.Base  import BaseError
 define("port", default=8081, help="run port", type=int)
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "templates")  
-STATIC_PATH = os.path.join(os.path.dirname(__file__), "static")
+STATIC_PATH   = os.path.join(os.path.dirname(__file__), "static")
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -31,18 +31,19 @@ class MyFile(tornado.web.StaticFileHandler):
 
 class Application(tornado.web.Application):  
     def __init__(self):  
-        handlers = route.handlers
-        dbConfig = config.pdbConfig
+        dbConfig    = config.DbConfig        # 得到 DB Config
+        redisConfig = config.RedisConfig     # 得到 Redis Config
         
-        settings = dict(  
+        settings = dict(                     # 得到模板及静态地址路径
             template_path = TEMPLATE_PATH,   
             static_path = STATIC_PATH,   
             debug = True  #开启调试模式
         )
         
+        handlers    = route.handlers                                      # 注入路由
         tornado.web.Application.__init__(self, handlers, **settings)  
-        self.db = Framework.dbMysql.DB(dbConfig)
-
+        self.db  = Framework.dbMysql.DB(dbConfig)                         # 注入MySql
+        self.rds = Framework.dbRedis.RedisCache(redisConfig)              # 注入Redis
         
 def main():  
     tornado.options.parse_command_line()  

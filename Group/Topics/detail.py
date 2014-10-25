@@ -47,10 +47,29 @@ class Handler(WebRequestHandler):
             user=self.getTokenToUser()
             objData=self.getRequestData()
             try:
-                topic=objData['topic']
-                summary = objData['summary']
-                content=objData['content']
-                imgFiles=objData['imgFiles']
+                try :
+                    topic=objData['topic']
+                except:
+                    topic=None
+                
+                try :
+                    summary = objData['summary']
+                except :
+                    summary=None
+                 
+                try :  
+                    content=objData['content']
+                except :
+                    content=None
+                try :
+                    imgFiles=objData['imgFiles']
+                except :
+                    imgFiles=None
+                try :
+                    removeImgFiles=objData['rImgFiles']
+                except :
+                    removeImgFiles=None
+                
                 try :
                     status =objData['status']
                 except :
@@ -61,10 +80,12 @@ class Handler(WebRequestHandler):
             oFileHtml={
                 'content':content,
                 'files':None
-            }           
+            }
+            
+            oHuf=uploadfile.uploadfile()
+            
             if imgFiles is not None :
                 # 将临时图像文件移动到正式文件夹中,并更替Content里的图片链接为正式连接
-                oHuf=uploadfile.uploadfile()
                 # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
                 oFileHtml=oHuf.preImagesAndHtml(imgFiles,content,'group')
             
@@ -90,8 +111,12 @@ class Handler(WebRequestHandler):
             if rowcount<0 :
                 # 插入失败后删除成功移动的文件
                 oHuf.delFiles(oFileHtml['files'])              
-                raise BaseError(802) # SQL执行没有成功,可能是user与tid不匹配，即用户只能删除自己的话题            
-
+                raise BaseError(802) # SQL执行没有成功,可能是user与tid不匹配，即用户只能删除自己的话题
+            
+            if removeImgFiles is not None :
+                # 插入失败后删除成功移动的文件
+                oHuf.delFiles(removeImgFiles)                   
+                
             self.response()
         except BaseError as e:
             self.gotoErrorPage(e.code)        
@@ -103,7 +128,6 @@ class Handler(WebRequestHandler):
         try:
             super().post(self)
             user=self.getTokenToUser()
-            objData=self.getRequestData()
             db=self.openDB()
             db.begin()
             
