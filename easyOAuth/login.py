@@ -78,7 +78,6 @@ class Handler(WebRequestHandler):
                 self.set_header('Authorization', '')
                 raise BaseError(603) # '603' - 用户名或密码错误.
                 #self.set_header('status', 404)
-                return 
 
             authcode = appId+uid+iv+url+str(int(time.time()))
             authcode = md5(authcode.encode()).hexdigest()

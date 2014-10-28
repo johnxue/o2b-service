@@ -130,7 +130,13 @@ errorDic={
             "status"        : 400,
             "message"       : "文件移动失败！",
             "help_document" : "/o2b/v1.0.0/help/817"
-        },        
+        },  
+        818 : {
+            "code"          : "818",
+            "status"        : 400,
+            "message"       : "发送消息失败！",
+            "help_document" : "/o2b/v1.0.0/help/818"
+        },                
         890 : {
             "code"          : "890",
             "status"        : 400,

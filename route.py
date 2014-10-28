@@ -27,17 +27,20 @@ from Order import attribute,list,detail
 import Order.Returns.list
 
 
-import User.follow
-import User.changePassword
 
-import Service,Group
+import User,Group,Service,Message
 
 #.uploadfile,Service.RichEditor
 #import Group.attribute,Group.list,Group.usermanage,Group.userAction,Group.userinfo,Group.groupinfo
 
+from User         import list,detail,follow,changePassword
+from User         import list,detail,follow,changePassword
 
-from Group   import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
+from Message      import list,detail,sniffing,send
+
+from Group        import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
 from Group.Topics import list,detail,commentDetail,commentReply
+
 #import Group.Topics.list
 #import Group.Topics.detail
 #import Group.Topics.commentDetail
@@ -69,6 +72,8 @@ handlers = [
             (r"/o2b/v1.0.0/user/product/follow", User.follow.info),
             (r"/o2b/v1.0.0/user/info/pmssmed", User.changePassword.Handler),
             (r"/o2b/v1.0.0/user/header", Service.uploadfile.Handler),
+            (r"/o2b/v1.0.0/user/(.*)/info", User.detail.Handler),
+            (r"/o2b/v1.0.0/user", User.list.Handler),
             
             #(r"/o2b/v1.0.0/user/info", User.follow.info)
             
@@ -109,6 +114,13 @@ handlers = [
             (r"/o2b/v1.0.0/group/topics/([0-9]+)", Group.Topics.detail.Handler),
             (r"/o2b/v1.0.0/group/topics/([0-9]+)/comment", Group.Topics.commentDetail.Handler),
             (r"/o2b/v1.0.0/group/topics/comment/([0-9]+)/reply", Group.Topics.commentReply.Handler),
+
+            # 消息
+            (r"/o2b/v1.0.0/message/sendto/(.*)", Message.send.Handler),
+            (r"/o2b/v1.0.0/message/sniffing", Message.sniffing.Handler),
+            (r"/o2b/v1.0.0/message/(unread|read)", Message.list.Handler),
+            (r"/o2b/v1.0.0/message/(.*)", Message.detail.Handler),
+            
             
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),

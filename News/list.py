@@ -9,15 +9,19 @@ class info(WebRequestHandler):
             
             offset   = int(self.get_argument("o",default='0'))
             rowcount = int(self.get_argument("r",default='1000'))
+            offset=offset*rowcount
+            
+            status = self.get_argument("s",default='')
         
             db = self.openDB()
             
             #1.1 查询产品属性；
             conditions={
                 'select' : 'id,title,author,source,summary,createTime,topLevel,CTR,status_code,status',
-                'where'  : 'status_code="OK"',
                 'limit'  : '%s,%s' % (offset,rowcount)
             }
+            if len(status)>0 : conditions['where'] = 'status_code="%s"'%(status,)
+
             rows_list = db.getAllToList('vwNews',conditions)
 
             self.closeDB()
@@ -101,3 +105,35 @@ class info(WebRequestHandler):
             
         except BaseError as e:
             self.gotoErrorPage(e.code) 
+            
+            
+    # 删除新闻         
+    def delete(self):
+        try :
+            super().delete(self)
+            db = self.openDB()
+            
+            objData=self.getRequestData()
+            user=self.getTokenToUser()
+            
+            ids = objData["ids"]
+            
+                
+            #1. 查询新闻详情；
+            updateData = {
+                'status' :'UD' , #此状态应该根据用户的权限来判读 UD|AD
+                'updateTime' : '{{now()}}',
+                'updateUser' : user,
+                'isDelete'   : 'Y'
+            }
+            
+            db=self.openDB()
+            #rw=db.update('tbNews',updateData,{'id':id,'user':user})
+            
+            rw=db.updateByPk('tbNews',updateData,'{{ in (%s)}}'%(ids))
+            self.closeDB()
+            if rw<0 : raise BaseError(803) # 修改数据失败
+
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)     

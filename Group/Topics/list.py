@@ -20,21 +20,31 @@ class Handler(WebRequestHandler):
             super().get(self)
             offset=int(self.get_argument("o",default=0))
             rowcount=int(self.get_argument("r",default=1000))
+            searchString=self.get_argument("q",default='')
+            
             offset=offset*rowcount
             user=self.getTokenToUser()
                 
             db=self.openDB()
-            
-            #1. 查询圈子的总帖子数
-            intCountTopic=db.count('vwGroupTopics',{'gid':gid})
-            if intCountTopic==0 : raise BaseError(802) # 没有找到数据
-            
-            #2. 查询圈子的帖子
+
+            #1. 查询圈子的帖子
             topicsSelect={
                 'select' : 'id,gid,user,nickname,header,topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status',
                 'where'  : "gid=%s" % (gid,),
                 'limit' : '%s,%s' % (offset,rowcount)
             }
+            
+            #2. 查询符合条件的圈子总帖数
+            countSelect={'gid':gid}
+            
+            #3. 增加搜索条件
+            if len(searchString)>0 :
+                topicsSelect['where']+=" and topic like '%"+searchString+"%'"
+                countSelect['topic']="{{like '%"+searchString+"%'}}"
+                
+            intCountTopic=db.count('vwGroupTopics',countSelect)
+            if intCountTopic==0 : raise BaseError(802) # 没有找到数据
+            
             Topics_List = db.getAllToList('vwGroupTopics',topicsSelect)
             db.close()
             
@@ -115,5 +125,34 @@ class Handler(WebRequestHandler):
             self.response(rows)
                 
         except BaseError as e:
-            self.gotoErrorPage(e.code) 
+            self.gotoErrorPage(e.code)
+            
+            
+    # 用户删除话题
+    def delete(self,gid):
+        try:
+            super().post(self)
+            user=self.getTokenToUser()
+            
+            objData = self.getRequestData()
+            ids=objData['ids']
+            db=self.openDB()
+            
+            #1.1 修改话题状态;
+            updateData={
+                'updateTime' : '{{now()}}',
+                'status'     : 'UD',
+                'isDelete'   : 'Y'
+            }
+            
+            rowcount=db.updateByPk('tbGroupTopics',updateData,'{{ in (%s)}}'%(ids))
+            db.close()
+            
+            if rowcount<0 :raise BaseError(802) # SQL执行没有成功,可能是user与tid不匹配，即用户只能删除自己的话题
+                
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+            
+
             

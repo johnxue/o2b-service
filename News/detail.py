@@ -65,7 +65,6 @@ class info(WebRequestHandler):
             super().delete(self)
             db = self.openDB()
             
-            objData=self.getRequestData()
             user=self.getTokenToUser()
                 
             #1. 查询新闻详情；

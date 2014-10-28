@@ -685,21 +685,24 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
   查询参数：
   o = 起始页                  [可选]
   r = 每页行数                [可选]
+  s = 状态                    [可选，WT-等待申核 OK-已审核 NP-未通过审核 UD-用户删除 HD-屏蔽不显示 NO-未提交审核]
   输出：
               {
                  "news" : [
-                     [$id,$title,$author,$source,$summary,$createTime,$CTR],
+                     [$id,$title,$author,$source,$summary,$createTime,$CTR,$status_code,$status],
                      ...
                  ]
               }
 
  注：$id  - 新闻ID
-     $title      - 新闻标题
-     $author     - 新闻作者
-     $source     - 新闻来源
-     $summary    - 新闻摘要
-     $createTime - 时间
-     $CTR        - 点击率
+     $title       - 新闻标题
+     $author      - 新闻作者
+     $source      - 新闻来源
+     $summary     - 新闻摘要
+     $createTime  - 时间
+     $CTR         - 点击率
+     $status_code - 状态码
+     $status      - 状态
 
 
 4.7.2. 获得新闻详情
@@ -782,7 +785,18 @@ URI: https://192.168.1.210/o2b/v1.0.0/address/$id
   URI: https://192.168.1.210/o2b/v1.0.0/news/$id
   输入方法：delete
   输出： http status : 204 操作成功，无返回
-  
+
+4.7.9 批量删除新闻
+URI: https://192.168.1.210/o2b/v1.0.0/news
+输入：
+     http header：Authorization
+     方法:delete
+     参数：
+     {
+       ids : '$id1,$id2,...,$idn'
+     }
+输出：http status : 204 操作成功，无返回
+
   
 4.8 广告
 
@@ -1136,6 +1150,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
      查询参数：
      o = 起始页                  [可选]
      r = 每页行数                [可选]
+     q = 查询关键字               [可选，非模糊查询]
 输出：
      {
         'gid'    : 圈子id,
@@ -1273,6 +1288,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
 输入：
      http header：Authorization
      方法:delete
+输出：http status : 204 操作成功，无返回
 
 
 4.9.18.7 新增话题评论
@@ -1312,9 +1328,34 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/topics/comment/$cid/reply
 注： imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
      如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
 
+
+4.9.18.9 话题加/去精，置顶/去置顶，设置状态
+URI: https://192.168.1.210/o2b/v1.0.0/group/topics/$tid
+输入：
+     http header：Authorization
+     方法:patch
+     参数：
+     {
+       ssence     : 'Y|N'，    [可选，Y-加精 N-去精]
+       top        ： 'Y|N'，    [可选，Y-置顶 N-去置顶]
+       status     : 'OK|NR|HD' [可选, OK-正常，NR-不充许回复，HD-隐藏话题]
+     }
+输出：http status : 204 操作成功，无返回
+
+4.9.18.10 批量删除圈子下的话题
+URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
+输入：
+     http header：Authorization
+     方法:delete
+     参数：
+     {
+       ids : '$id1,$id2,...,$idn'
+     }
+输出：http status : 204 操作成功，无返回
+
 4.10 用户
 4.10.1 查看用户信息
-URI: https://192.168.1.210/o2b/v1.0.0/user/info
+URI: https://192.168.1.210/o2b/v1.0.0/user/$id/info
 输入：
      http header：Authorization
      方法:get
@@ -1372,9 +1413,111 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/product/follow
 }
 
 
-4.11 系统服务
+4.11 消息
+4.11.1. 消息探测（得到最新的消息数量）
+URI: https://192.168.1.210/o2b/v1.0.0/message/sniffing
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+输出： http status : 200
+{
+   unread_count: 未读消息数量,
+   read_count  : 已读消息数量
+}
 
-4.11.1 文件上传
+4.11.2. 得到未读消息列表
+URI: https://192.168.1.210/o2b/v1.0.0/message/unread
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+输出： http status : 200
+{
+  msg_list_UNREAD: [
+    {
+      id    : "消息ID",
+      level : "消息级别",
+      time  : "消息时间",
+      from  : "发件人用户ID",
+      name  : "发件人昵称",
+      msg   : "消息内容"
+    },
+    ...
+    {
+      id    : "消息ID",
+      level : "消息级别",
+      time  : "消息时间",
+      from  : "发件人用户ID",
+      name  : "发件人昵称",
+      msg   : "消息内容"
+   }
+ ]
+}
+
+4.11.3. 得到已读消息列表
+URI: https://192.168.1.210/o2b/v1.0.0/message/read
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+输出： http status : 200
+{
+  msg_list_READ: [
+    {
+      id    : "消息ID",
+      level : "消息级别",
+      time  : "消息时间",
+      from  : "发件人用户ID",
+      name  : "发件人昵称",
+      title : "消息标题"
+    },
+    ...
+    {
+      id    : "消息ID",
+      level : "消息级别",
+      time  : "消息时间",
+      from  : "发件人用户ID",
+      name  : "发件人昵称",
+      title : "消息标题"
+   }
+ ]
+}
+
+4.11.4. 得到消息具体内容
+URI: https://192.168.1.210/o2b/v1.0.0/message/$mid
+输入：
+     http header：Authorization
+     方法:GET
+     参数:
+输出： http status : 200
+{
+  level : "消息级别",
+  time  : "消息时间",
+  from  : "发件人用户ID",
+  name  : "发件人昵称",
+  title : "消息标题",
+  msg   : "消息内容"
+}
+
+
+4.11.5. 发送消息
+URI: https://192.168.1.210/o2b/v1.0.0/message/sendto/$uid
+输入：
+     http header：Authorization
+     方法:POST
+     参数:
+     {
+        title : '消息标题'
+        msg   : '消息内容'
+     }
+输出： 发送成功无输出 http status : 201
+
+
+
+4.12 系统服务
+
+4.12.1 文件上传
 URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
 输入：
      http header：Authorization

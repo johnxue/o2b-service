@@ -13,7 +13,8 @@ class uploadfile:
     
     # 删除一组文件，errPass为真时不对错误进行处理，为假时，不能删除文件时返回False
     def delFiles(self,lstFiles,errPass=True) :
-        lstImg=lstFiles.split(',')
+        #lstImg=lstFiles.split(',')
+        lstImg=lstFiles
         for f in lstImg :
             try:
                 if config.imageRootPath not in f :  f=config.imageRootPath+f

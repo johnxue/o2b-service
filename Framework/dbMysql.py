@@ -122,9 +122,16 @@ class DB():
         # 根据条件统计行数
         try :
             sql = 'SELECT COUNT(*) FROM `%s`' % table
-            sql = self.__joinWhere(sql,params,join)
+            
+            if params :
+                where ,whereValues   = self.__contact_where(params)
+                sqlWhere= ' WHERE '+where if where else ''
+                sql+=sqlWhere
+            
+            #sql = self.__joinWhere(sql,params,join)
             cursor = self.__getCursor()
-            cursor.execute(sql,tuple(params.values()))
+            cursor.execute(sql,tuple(whereValues))
+            #cursor.execute(sql,tuple(params.values()))
             result = cursor.fetchone();
             return result[0] if result else 0
         except:

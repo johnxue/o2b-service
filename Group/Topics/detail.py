@@ -90,7 +90,6 @@ class Handler(WebRequestHandler):
                 oFileHtml=oHuf.preImagesAndHtml(imgFiles,content,'group')
             
             db=self.openDB()
-            db.begin()
             
             #1.1 修改话题;
             updateData={
@@ -119,9 +118,51 @@ class Handler(WebRequestHandler):
                 
             self.response()
         except BaseError as e:
-            self.gotoErrorPage(e.code)        
-    
-        
+            self.gotoErrorPage(e.code)
+            
+    # 话题状态，加精，加置顶
+    def patch(self,tid) :
+        try:
+            super().post(self)
+            user=self.getTokenToUser()
+            objData=self.getRequestData()
+            # 修改状态;
+            updateData={}
+            
+            try :
+                status =objData['status']
+                updateData['status']=status
+            except :
+                pass
+            
+            try :
+                top = objData['top']
+                updateData['isTop']=top
+                if top not in ['Y','N'] : raise BaseError(801) # 参数错误
+            except :
+                pass 
+            
+            try :
+                essence = objData['essence']
+                updateData['isEssence']=essence
+                if essence not in ['Y','N'] : raise BaseError(801) # 参数错误
+            except :
+                pass 
+            
+            if updateData=={} :
+                raise BaseError(801) # 参数错误
+          
+            
+            db=self.openDB()
+            # 以下有权限问题
+            rowcount=db.update('tbGroupTopics',updateData,{'id':tid}) 
+            db.close()
+            
+            if rowcount<0 : raise BaseError(802) # SQL执行没有成功,可能是user与tid不匹配，即用户只能删除自己的话题
+                
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
 
     # 用户删除话题
     def delete(self,tid):

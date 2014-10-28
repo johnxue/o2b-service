@@ -43,7 +43,7 @@ class Application(tornado.web.Application):
         handlers    = route.handlers                                      # 注入路由
         tornado.web.Application.__init__(self, handlers, **settings)  
         self.db  = Framework.dbMysql.DB(dbConfig)                         # 注入MySql
-        self.rds = Framework.dbRedis.RedisCache(redisConfig)              # 注入Redis
+        #self.rds = Framework.dbRedis.RedisCache(redisConfig)              # 注入Redis
         
 def main():  
     tornado.options.parse_command_line()  
