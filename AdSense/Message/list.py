@@ -53,6 +53,8 @@ class Handler(WebRequestHandler):
                 self.response()
             else : 
                 raise BaseError(818) # 发送消息失败
+            
+            self.response()
         except BaseError as e:
             self.gotoErrorPage(e.code)
 

@@ -30,27 +30,13 @@ import Order.Returns.list
 
 import User,Group,Service,Message
 
-#.uploadfile,Service.RichEditor
-#import Group.attribute,Group.list,Group.usermanage,Group.userAction,Group.userinfo,Group.groupinfo
-
 from User         import list,detail,follow,changePassword
-from User         import list,detail,follow,changePassword
-
 from Message      import list,detail,sniffing,send
-
 from Group        import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
 from Group.Topics import list,detail,commentDetail,commentReply
-
-#import Group.Topics.list
-#import Group.Topics.detail
-#import Group.Topics.commentDetail
-#import Group.Topics.commentReply
-
-
-from Service import uploadfile,RichEditor
+from Service      import uploadfile,RichEditor
 
 import ApiLib.list
-
 
 
 handlers = [
@@ -116,9 +102,9 @@ handlers = [
             (r"/o2b/v1.0.0/group/topics/comment/([0-9]+)/reply", Group.Topics.commentReply.Handler),
 
             # 消息
-            (r"/o2b/v1.0.0/message/sendto/(.*)", Message.send.Handler),
+            #(r"/o2b/v1.0.0/message/sendto/(.*)", Message.send.Handler),
             (r"/o2b/v1.0.0/message/sniffing", Message.sniffing.Handler),
-            (r"/o2b/v1.0.0/message/(unread|read)", Message.list.Handler),
+            (r"/o2b/v1.0.0/message", Message.list.Handler),
             (r"/o2b/v1.0.0/message/(.*)", Message.detail.Handler),
             
             

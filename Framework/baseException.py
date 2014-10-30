@@ -136,7 +136,13 @@ errorDic={
             "status"        : 400,
             "message"       : "发送消息失败！",
             "help_document" : "/o2b/v1.0.0/help/818"
-        },                
+        },
+        823 : {
+            "code"          : "823",
+            "status"        : 400,
+            "message"       : "插入数据失败!(redis)",
+            "help_document" : "/o2b/v1.0.0/help/823"
+        },        
         890 : {
             "code"          : "890",
             "status"        : 400,

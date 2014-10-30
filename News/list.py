@@ -15,6 +15,18 @@ class info(WebRequestHandler):
         
             db = self.openDB()
             
+            #import pdb
+            #pdb.set_trace()
+
+            #1. 查询符合条件的总帖数
+            countSelect={
+                '{{1}}':'1'
+            }
+
+            if len(status)>0 : countSelect['status_code'] = status
+            intCountNews=db.count('vwNews',countSelect)
+            if intCountNews==0 : raise BaseError(802) # 没有找到数据
+            
             #1.1 查询产品属性；
             conditions={
                 'select' : 'id,title,author,source,summary,createTime,topLevel,CTR,status_code,status',
@@ -30,7 +42,11 @@ class info(WebRequestHandler):
                 raise BaseError(802) # 未找到数据
             
             #3. 打包成json object
-            rows = {'news' : rows_list }
+            rows = {
+                'count': intCountNews,
+                'news' : rows_list
+             }
+
             self.response(rows)
             
         except BaseError as e:

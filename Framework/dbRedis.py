@@ -1,7 +1,4 @@
-import redis
-import msgpack
-import config
-
+import redis,msgpack,config,ujson
 
 '''
 Mysql 主
@@ -29,15 +26,6 @@ class RedisCache(object):
             RedisCache.create_pool(self,config.RedisConfig)
         self._connection = redis.Redis(connection_pool = RedisCache.pool)  
         
-    '''
-    @staticmethod  
-    def open(self):
-        if not hasattr(RedisCache, 'pool'):  # 如果RedisCache中无属性'pool'，则创建
-            RedisCache.create_pool(self,self.config)
-        self._connection = redis.Redis(connection_pool = RedisCache.pool)  
-        return self._connection
-    '''       
-
     @staticmethod  
     def create_pool(self,config):  
         RedisCache.pool = redis.ConnectionPool(**config)  
@@ -66,7 +54,7 @@ class RedisCache(object):
         return 'HMSET %s '+ RedisCache.jsonToString(self, data)
     
     @operator_status
-    def save_list(self,table,data,id=None,RL='R'):
+    def save_list(self,table,data,id=None,RL='L'):
         if id is None : id = ''
         luaScript_Save = '''
             if #ARGV[1]==0 or ARGV[1]='{}' then
@@ -88,18 +76,18 @@ class RedisCache(object):
             return 1
         '''
         ls=self._connection.register_script(luaScript_Save)
-        return ls(keys=[table,id,RL],args=[data])
+        return ls(keys=[table,id,RL],args=[ujson.dumps(data)])
     
         
     @operator_status  
     def save(self,table,data,id=None) :
-        luaScript_Save = '''
+        luaScript = '''
             local tab = {}
             local key = KEYS[1]..':'..KEYS[2]
             local id  = 1  -- 如果是修改记录，则返回的值为1
 
             local value=cjson.decode(ARGV[1])
-            for k, v in pairs(value) do
+            for k,v in pairs(value) do
                 tab[#tab + 1] = k
                 tab[#tab + 1] = v
             end
@@ -107,8 +95,8 @@ class RedisCache(object):
             if redis.call("EXISTS", key) ~= 1 then
                -- 如果是新增记录，COUNT 计数器+1
                id=redis.call("INCR", KEYS[1]..':COUNT')
-               -- 将id添加到list列表尾部
-               redis.call("RPUS", KEYS[1]..":LIST",id)
+               -- 将id添加到list列表左侧
+               redis.call("LPUSH", KEYS[1]..":LIST",id)
                if KEYS[2]=='id' then
                   key=KEYS[1]..':'..id
                end
@@ -119,9 +107,9 @@ class RedisCache(object):
             return id
 
         '''
-        #self._connection.eval(luaScript,2,table,id,data)
-        ls=self._connection.register_script(luaScript_Save)
-        return ls(keys=[table,id],args=[data])
+        ls=self._connection.register_script(luaScript)
+        r=ls(keys=[table,id],args=[ujson.dumps(data)])
+        return r
         
     @operator_status  
     def delete(self,table,id) :
@@ -144,7 +132,7 @@ class RedisCache(object):
 
     @operator_status  
     def get(self,table,id) :
-        luaScript_Del = '''
+        luaScript= '''
             local key = KEYS[1]..':'..KEYS[2]
             local r=redis.call("HGETALL",key)
             local t={}
@@ -153,6 +141,6 @@ class RedisCache(object):
             end
             return cmsgpack.pack(t)
         '''
-        ls=self._connection.register_script(luaScript_Del)
+        ls=self._connection.register_script(luaScript)
         info=msgpack.unpackb(ls(keys=[table,id]),encoding='utf-8')
         return info

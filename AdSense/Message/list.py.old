@@ -20,8 +20,6 @@ class Handler(WebRequestHandler):
 
             msg     = entity.Message()
             rows = msg.getList(user,status,offset,rowcount)
-            if rows['msg_list_'+status]==[]:
-                raise BaseError(802) # 没有找到数据
             self.response(rows)
         except BaseError as e:
             self.gotoErrorPage(e.code)
@@ -53,26 +51,7 @@ class Handler(WebRequestHandler):
                 self.response()
             else : 
                 raise BaseError(818) # 发送消息失败
-        except BaseError as e:
-            self.gotoErrorPage(e.code)
-
-    # 删除指定消息
-    def delete(self):
-        try :
-            super().delete(self)
-            user   =self.getTokenToUser()
-            objData=self.getRequestData()
-            try:
-                ids=objData['ids']
-            except:
-                raise BaseError(801) # 参数错误
-                
-            msg    = entity.Message()
-            r = msg.remove(ids)
-            if r==0 : raise BaseError(802) # 数据没有找到
-            row={
-                'count':r
-            }
-            self.response(row)
+            
+            self.response()
         except BaseError as e:
             self.gotoErrorPage(e.code)

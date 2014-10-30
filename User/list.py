@@ -1,6 +1,7 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
-from User import user
+from User import entity
+
 
 
 class Handler(WebRequestHandler):
@@ -12,18 +13,19 @@ class Handler(WebRequestHandler):
             objData=self.getRequestData()
             try :
                 data={
-                       'user': objData['user'],
+                       'user'     : objData['user'],
                        'password' : objData['pwd'],
-                       'mobile' : objData['mbile']
+                       'mobile'   : objData['mobile']
                 }
             except :
                 raise BaseError(801) # 参数错误
-                
             
-            db=self.openDB()
-            hu=user.userinfo(db)
-            userinfo=hu.add(userid)
-            self.response(userinfo)
+            hu=entity.user()
+            uid=hu.add(data)
+            row={
+                'id' : uid
+            }
+            self.response(row)
         except BaseError as e:
             self.gotoErrorPage(e.code)
 

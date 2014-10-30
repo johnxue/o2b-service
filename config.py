@@ -9,13 +9,23 @@ DbConfig = {
   'pool_size'         : 16,
   'user'              : 'root',
   'password'          : '123456',
-  'host'              : 'localhost',
+  'host'              : '192.168.1.210',
+  'database'          : 'o2b',
+  'raise_on_warnings' : True,
+}
+
+MysqlConfig = {
+  'pool_name'         : "dbpool",
+  'pool_size'         : 16,
+  'user'              : 'root',
+  'password'          : '123456',
+  'host'              : '192.168.1.210',
   'database'          : 'o2b',
   'raise_on_warnings' : True,
 }
 
 RedisConfig={
-    'host'     : 'localhost',
+    'host'     : '192.168.1.210',
     'port'     : 6379,
     'db'       : 12,
     'password' : 'jct2014redis',

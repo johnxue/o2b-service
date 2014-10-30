@@ -41,7 +41,7 @@ class Message :
             
             return 1
         '''
-        strNowTime=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        strNowTime=datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
         messagePack['time']=strNowTime
         ls=self.rds.register_script(luaScript)
         r=ls(keys=[toUser],args=[ujson.dumps(messagePack)])

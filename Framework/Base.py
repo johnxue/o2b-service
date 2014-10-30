@@ -1,4 +1,5 @@
 import tornado.web
+import tornado.gen
 import config
 from Framework.baseException import errorDic,BaseError
 import decimal,datetime,json
@@ -39,15 +40,12 @@ class DecimalAndDateTimeEncoder(json.JSONEncoder):
         #return super(DecimalEncoder, self).default(o)   
 
 class WebRequestHandler(tornado.web.RequestHandler):
-    
-    def options(self,__p1__=None,__p2__=None,__p3__=None,__p4__=None,__p5__=None):
+    def options(self,*args,**kwargs):
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
         self.set_header('Access-Control-Allow-Headers', 'app-key,app-secret,authorization,Content-type,X_Requested_With')
-        #//header('Access-Control-Allow-Origin: http://www.baidu.com'); //设置http://www.baidu.com允许跨域访问
-        #//header('Access-Control-Allow-Headers: X-Requested-With,X_Requested_With'); //设置允许的跨域header                
     
-       
+    
     def response(self,data=None,status=200,angluar=True,callback=None):
 
         if status==200 : # 自动识别状态码

@@ -5,8 +5,332 @@ import mysql.connector.cursor
 from mysql.connector import errorcode
 from Framework.Base  import BaseError
 
-import logging
+import logging,config
 
+class Mysql(object):
+    def __init__(self):
+        if not hasattr(Mysql, 'pool'):  # 如果Mysql中无属性'pool'，则创建
+            Mysql.create_pool(self,config.MysqlConfig)
+        self._conn            = Mysql.pool.get_connection();
+        self._cursor          = self._conn.cursor(buffered=True)
+        self._conn.autocommit = True
+    
+    @staticmethod  
+    def create_pool(self,config):  
+        Mysql.pool = mysql.connector.pooling.MySQLConnectionPool(**config)
+
+
+    def close(self):
+        #关闭游标和数据库连接
+        self._cursor.close()
+        self._conn.close()    
+    
+    def begin(self):
+        self._conn.autocommit=False
+        
+    def commit(self):
+        self._conn.commit()
+        
+    def rollback(self):
+        self._conn.rollback()
+    
+    def count(self,table,params={},join='AND'):
+        # 根据条件统计行数
+        try :
+            sql = 'SELECT COUNT(*) FROM `%s`' % table
+            
+            if params :
+                where ,whereValues   = self.__contact_where(params)
+                sqlWhere= ' WHERE '+where if where else ''
+                sql+=sqlWhere
+            
+            #sql = self.__joinWhere(sql,params,join)
+            cursor = self.__getCursor()
+            cursor.execute(sql,tuple(whereValues))
+            #cursor.execute(sql,tuple(params.values()))
+            result = cursor.fetchone();
+            return result[0] if result else 0
+        except:
+            raise BaseError(707)         
+
+    def getToListByPk(self,table,criteria={},id=None,pk='id'):
+        # 根据条件查找记录返回List
+        if ('where' not in criteria) and (id is not None) :
+            criteria['where']='`'+pk+'`="'+str(id)+'"'
+        return self.__query(table,criteria,isDict=False)
+    
+    def getAllToList(self,table,criteria={},id=None,pk='id',join='AND'):
+        # 根据条件查找记录返回List
+        if ('where' not in criteria) and (id is not None) :
+            criteria['where']='`'+pk+'`="'+str(id)+'"'
+        return self.__query(table,criteria,all=True,isDict=False)
+
+    def getToObjectByPk(self,table,criteria={},id=None,pk='id'):
+        # 根据条件查找记录返回Object
+        if ('where' not in criteria) and (id is not None) :
+            criteria['where']='`'+pk+'`="'+str(id)+'"'
+        return self.__query(table,criteria)
+
+    def getAllToObject(self,table,criteria={},id=None,pk='id',join='AND'):
+        # 根据条件查找记录返回Object
+        if ('where' not in criteria) and (id is not None) :
+            criteria['where']='`'+pk+'`="'+str(id)+'"'
+        return self.__query(table,criteria,all=True)
+
+
+    def insert(self,table,data,commit=True):
+        # 新增一条记录
+        try :
+            
+            ''' 
+                从data中分离含用SQL函数的字字段到funData字典中,
+                不含SQL函数的字段到newData
+            '''            
+            funData,newData=self.__split_expression(data)
+            
+            funFields='';funValues=''
+            
+            # 拼不含SQL函数的字段及值
+            fields = ','.join('`'+k+'`' for k in newData.keys())
+            values = ','.join(("%s", ) * len(newData))
+            
+            # 拼含SQL函数的字段及值            
+            if funData :
+                funFields = ','.join('`'+k+'`' for k in funData.keys()) 
+                funValues =','.join( v for  v in funData.values())
+                
+            # 合并所有字段及值 
+            fields += ','+funFields if funFields else ''
+            values += ','+funValues if funValues else ''
+            sql = 'INSERT INTO `%s` (%s) VALUES (%s)'%(table,fields,values)
+            cursor = self.__getCursor()
+            cursor.execute(sql,tuple(newData.values()))
+            if commit : self.commit()
+            insert_id = cursor.lastrowid
+            return insert_id
+        except:
+            raise BaseError(703)
+        
+    def update(self,table,data,params={},join='AND',commit=True,lock=True):
+        # 更新数据
+        try :
+            fields,values  = self.__contact_fields(data)
+            if params :
+                where ,whereValues   = self.__contact_where(params)
+            
+            values.extend(whereValues) if whereValues else values
+            
+            sqlWhere= ' WHERE '+where if where else ''
+
+            cursor = self.__getCursor()
+            
+            if commit : self.begin()
+            
+            if lock :
+                sqlSelect="SELECT %s From `%s` %s for update" % (','.join(tuple(list(params.keys()))),table,sqlWhere)
+                cursor.execute(sqlSelect,tuple(whereValues))  # 加行锁
+                
+            sqlUpdate = "UPDATE `%s` SET %s "% (table,fields) + sqlWhere
+            cursor.execute(sqlUpdate,tuple(values))
+
+            if commit : self.commit()
+
+            return cursor.rowcount
+        except:
+            raise BaseError(705)
+        
+    def updateByPk(self,table,data,id,pk='id',commit=True,lock=True):
+        # 根据主键更新，默认是id为主键
+        return self.update(table,data,{pk:id},commit=commit,lock=lock)
+ 
+    
+# 内部私有的方法 -------------------------------------------------------------------------------------
+    
+    def __get_connection(self):
+        return Mysql.pool.get_connection()
+    
+    def __getCursor(self):
+        """获取游标"""
+        if self._cursor is None:
+            self._cursor = self._conn.cursor()
+        return self._cursor
+
+    def __joinWhere(self,sql,params,join):
+        # 转换params为where连接语句
+        if params:
+            
+            funParams={};newParams={};newWhere='';funWhere=''
+            
+            # 从params中分离含用SQL函数的字字段到Params字典中
+            for (k,v) in params.items():
+                if 'str' in str(type(v)) and '{{' == v[:2] and '}}'==v[-2:]  :
+                    funParams[k]=v[2:-2]
+                else:
+                    newParams[k]=v
+
+            # 拼 newParams 条件         
+            keys,_keys = self.__tParams(newParams)
+            newWhere = ' AND '.join(k+'='+_k for k,_k in zip(keys,_keys)) if join == 'AND' else ' OR '.join(k+'='+_k for k,_k in zip(keys,_keys))
+            
+            # 拼 funParams 条件
+            if funParams :
+                funWhere = ' AND '.join(k+'='+v for k,v in funParams.items()) if join == 'AND' else ' OR '.join(k+'='+v for k,v in funParams.items())
+            
+            # 拼最终的 where
+            where=((newWhere+' AND ' if newWhere else '')+funWhere if funWhere else newWhere) if join=='AND' else ((newWhere+' OR ' if newWhere else '')+funWhere if funWhere else newWhere)
+                
+            #--------------------------------------
+            #keys,_keys = self.__tParams(params)
+            #where = ' AND '.join(k+'='+_k for k,_k in zip(keys,_keys)) if join == 'AND' else ' OR '.join(k+'='+_k for k,_k in zip(keys,_keys))
+            sql+=' WHERE ' + where
+        return sql
+    
+    def __tParams(self,params):
+        keys = ['`'+k+'`'  if k[:2]!='{{' else k[2:-2] for k in params.keys()]
+        _keys = ['%s' for k in params.keys()]
+        return keys,_keys
+    
+    def __query(self,table,criteria,all=False,isDict=True,join='AND'):
+        '''
+           table    : 表名
+           criteria : 查询条件dict
+           all      : 是否返回所有数据，默认为False只返回一条数据,当为真是返回所有数据
+           isDict   : 返回格式是否为字典，默认为True ，即字典否则为数组 
+        
+        '''
+        try : 
+            if all is not True:
+                criteria['limit'] = 1  # 只输出一条
+            sql = self.__contact_sql(table,criteria,join) #拼sql
+            cursor = self.__getCursor()
+            
+            # 当Where为多个查询条件时，拼查询条件 key 的 valuse 值
+            if 'where' in criteria and 'dict' in str(type(criteria['where'])) :
+                params = criteria['where']
+                params = tuple(params.values())
+            else :
+                params = None
+            
+            #__contact_where(params,join='AND')
+            cursor.execute(sql,params)
+            
+            rows = cursor.fetchall() if all else cursor.fetchone()
+           
+            if isDict :
+                result = [dict(zip(cursor.column_names,row)) for row in rows] if all else dict(zip(cursor.column_names,rows)) if rows else {}
+            else :
+                result = [row for row in rows] if all else rows if rows else []
+            return result
+        except :
+            raise BaseError(706)         
+            
+            
+    def __contact_sql(self,table,criteria,join='AND'):
+        sql = 'SELECT '
+        if criteria and type(criteria) is dict:
+            #select fields
+            if 'select' in criteria:
+                fields = criteria['select'].split(',')
+                sql+= ','.join(field[2:-2] if '{{' == field[:2] and '}}'==field[-2:] else '`'+field+'`' for field in fields)
+            else:
+                sql+=' * '
+            #table
+            sql+=' FROM `%s`'%table
+            #where
+            if 'where' in criteria:
+                if 'str' in str(type(criteria['where'])) :   # 当值为String时，即单一Key时
+                    sql+=' WHERE '+ criteria['where']
+                else :                                       # 当值为dict时，即一组key时
+                    params=criteria['where']
+                    sql+= self.__joinWhere('',params,join)
+                    
+            #group by
+            if 'group' in criteria:
+                sql+=' GROUP BY '+ criteria['group']
+            #having
+            if 'having' in criteria:
+                sql+=' HAVING '+ criteria['having']
+            #order by
+            if 'order' in criteria:
+                sql+=' ORDER BY '+ criteria['order']
+            #limit
+            if 'limit' in criteria:
+                sql+=' LIMIT '+ str(criteria['limit'])
+            #offset
+            if 'offset' in criteria:
+                sql+=' OFFSET '+ str(criteria['offset'])
+        else:
+            sql+=' * FROM `%s`'%table
+        return sql
+
+    # 将字符串和表达式分离
+    def __split_expression(self,data) :
+        funData={};newData={};funFields=''
+                                
+        # 从data中移出含用SQL函数的字字段到funData字典中
+        for (k,v) in data.items():
+            if 'str' in str(type(v)) and '{{' == v[:2] and '}}'==v[-2:] :
+                funData[k]=v[2:-2]
+            else : newData[k]=v
+        
+        return (funData,newData)
+        
+        
+    # 拼Update字段    
+    def __contact_fields(self,data) :
+    
+        funData,newData=self.__split_expression(data)
+        if funData :
+            funFields = ','.join('`'+k+'`=%s'  % (v) for k,v in funData.items())
+        fields = ','.join('`'+k+'`=%s' for k in newData.keys())
+        
+        # fields 与 funFields 合并
+        if funData :
+            fields = ','.join([fields,funFields]) if fields else funFields
+            
+        values = list(newData.values())
+        
+        return (fields,values)
+    
+    def __hasKeyword(self,key) :
+        if 'in ('  in key : return True
+        if 'like ' in key : return True 
+        return False
+        
+    # 拼Where条件
+    def __contact_where(self,params,join='AND') :
+        funParams,newParams=self.__split_expression(params)
+        
+        # 拼 newParams 条件
+        keys,_keys = self.__tParams(newParams)
+        newWhere = ' AND '.join(k+'='+_k for k,_k in zip(keys,_keys)) if join == 'AND' else ' OR '.join(k+'='+_k for k,_k in zip(keys,_keys))
+        values = list(newParams.values())
+    
+        # 拼 funParams 条件
+        funWhere = ' AND '.join('`'+k+'`'+ (' ' if self.__hasKeyword(v) else '=') +v for k,v in funParams.items()) if join == 'AND' else ' OR '.join('`'+k+'`'+(' ' if self.__hasKeyword(v) else '=')+v for k,v in funParams.items())
+
+        # 拼最终的 where
+        where=((newWhere+' AND ' if newWhere else '')+funWhere if funWhere else newWhere) if join=='AND' else ((newWhere+' OR ' if newWhere else '')+funWhere if funWhere else newWhere)
+        return (where,values)
+    
+    
+    def get_ids(self,list): #从getAllToList返回中提取id
+        try:
+            test=list[0][0]
+            dimension=2
+        except:
+            dimension=1
+            
+        ids=[]
+        if dimension>1 : 
+            for i in range(len(list)) : ids.append(str(list[i][0]))
+        else : 
+            for i in range(len(list)) : ids.append(str(list[i]))
+        
+        return ','.join(ids)
+
+
+#-------------------------------------------------------------------------------------------------
 class DB():
     
     def __init__(self,config):
