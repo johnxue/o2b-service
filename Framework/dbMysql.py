@@ -23,7 +23,8 @@ class Mysql(object):
     def close(self):
         #关闭游标和数据库连接
         self._cursor.close()
-        self._conn.close()    
+        self._conn.close()
+        pass
     
     def begin(self):
         self._conn.autocommit=False
@@ -145,15 +146,14 @@ class Mysql(object):
  
     
 # 内部私有的方法 -------------------------------------------------------------------------------------
-    
     def __get_connection(self):
-        return Mysql.pool.get_connection()
+        return self.pool.get_connection()
     
     def __getCursor(self):
         """获取游标"""
-        if self._cursor is None:
-            self._cursor = self._conn.cursor()
-        return self._cursor
+        if self.__cursor is None:
+            self.__cursor = self.__conn.cursor()
+        return self.__cursor
 
     def __joinWhere(self,sql,params,join):
         # 转换params为where连接语句
@@ -201,17 +201,21 @@ class Mysql(object):
         try : 
             if all is not True:
                 criteria['limit'] = 1  # 只输出一条
-            sql = self.__contact_sql(table,criteria,join) #拼sql
-            cursor = self.__getCursor()
+            sql,params = self.__contact_sql(table,criteria,join) #拼sql及params
             
+            '''
             # 当Where为多个查询条件时，拼查询条件 key 的 valuse 值
             if 'where' in criteria and 'dict' in str(type(criteria['where'])) :
                 params = criteria['where']
-                params = tuple(params.values())
+                #params = tuple(params.values())
+                where ,whereValues   = self.__contact_where(params)
+                sql+= ' WHERE '+where if where else ''
+                params=tuple(whereValues)
             else :
                 params = None
-            
+            '''
             #__contact_where(params,join='AND')
+            cursor = self.__getCursor()
             cursor.execute(sql,params)
             
             rows = cursor.fetchall() if all else cursor.fetchone()
@@ -240,9 +244,14 @@ class Mysql(object):
             if 'where' in criteria:
                 if 'str' in str(type(criteria['where'])) :   # 当值为String时，即单一Key时
                     sql+=' WHERE '+ criteria['where']
+                    whereValues=None
                 else :                                       # 当值为dict时，即一组key时
                     params=criteria['where']
-                    sql+= self.__joinWhere('',params,join)
+                    #sql+= self.__joinWhere('',params,join)
+                    #sql+=self.__contact_where(params,join)
+                    where ,whereValues   = self.__contact_where(params)
+                    sql+= ' WHERE '+where if where else ''
+                    #sql=sql % tuple(whereValues)
                     
             #group by
             if 'group' in criteria:
@@ -261,7 +270,8 @@ class Mysql(object):
                 sql+=' OFFSET '+ str(criteria['offset'])
         else:
             sql+=' * FROM `%s`'%table
-        return sql
+            
+        return sql,whereValues
 
     # 将字符串和表达式分离
     def __split_expression(self,data) :
@@ -294,7 +304,9 @@ class Mysql(object):
     
     def __hasKeyword(self,key) :
         if 'in ('  in key : return True
-        if 'like ' in key : return True 
+        if 'like ' in key : return True
+        if '>' in key : return True
+        if '<' in key : return True
         return False
         
     # 拼Where条件
@@ -327,9 +339,7 @@ class Mysql(object):
         else : 
             for i in range(len(list)) : ids.append(str(list[i]))
         
-        return ','.join(ids)
-
-
+        return ','.join(ids)    
 #-------------------------------------------------------------------------------------------------
 class DB():
     
@@ -609,17 +619,21 @@ class DB():
         try : 
             if all is not True:
                 criteria['limit'] = 1  # 只输出一条
-            sql = self.__contact_sql(table,criteria,join) #拼sql
-            cursor = self.__getCursor()
+            sql,params = self.__contact_sql(table,criteria,join) #拼sql及params
             
+            '''
             # 当Where为多个查询条件时，拼查询条件 key 的 valuse 值
             if 'where' in criteria and 'dict' in str(type(criteria['where'])) :
                 params = criteria['where']
-                params = tuple(params.values())
+                #params = tuple(params.values())
+                where ,whereValues   = self.__contact_where(params)
+                sql+= ' WHERE '+where if where else ''
+                params=tuple(whereValues)
             else :
                 params = None
-            
+            '''
             #__contact_where(params,join='AND')
+            cursor = self.__getCursor()
             cursor.execute(sql,params)
             
             rows = cursor.fetchall() if all else cursor.fetchone()
@@ -639,18 +653,24 @@ class DB():
             #select fields
             if 'select' in criteria:
                 fields = criteria['select'].split(',')
-                sql+= ','.join(field[2:-2] if '{{' == field[:2] and '}}'==field[-2:] else '`'+field+'`' for field in fields)
+                sql+= ','.join(field.strip()[2:-2] if '{{' == field.strip()[:2] and '}}'==field.strip()[-2:] else '`'+field.strip()+'`' for field in fields)
             else:
                 sql+=' * '
             #table
             sql+=' FROM `%s`'%table
+            
             #where
+            whereValues=None
             if 'where' in criteria:
                 if 'str' in str(type(criteria['where'])) :   # 当值为String时，即单一Key时
                     sql+=' WHERE '+ criteria['where']
                 else :                                       # 当值为dict时，即一组key时
                     params=criteria['where']
-                    sql+= self.__joinWhere('',params,join)
+                    #sql+= self.__joinWhere('',params,join)
+                    #sql+=self.__contact_where(params,join)
+                    where ,whereValues   = self.__contact_where(params)
+                    sql+= ' WHERE '+where if where else ''
+                    #sql=sql % tuple(whereValues)
                     
             #group by
             if 'group' in criteria:
@@ -669,7 +689,8 @@ class DB():
                 sql+=' OFFSET '+ str(criteria['offset'])
         else:
             sql+=' * FROM `%s`'%table
-        return sql
+            
+        return sql,whereValues
 
     # 将字符串和表达式分离
     def __split_expression(self,data) :
@@ -702,7 +723,9 @@ class DB():
     
     def __hasKeyword(self,key) :
         if 'in ('  in key : return True
-        if 'like ' in key : return True 
+        if 'like ' in key : return True
+        if '>' in key : return True
+        if '<' in key : return True
         return False
         
     # 拼Where条件

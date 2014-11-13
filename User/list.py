@@ -15,7 +15,8 @@ class Handler(WebRequestHandler):
                 data={
                        'user'     : objData['user'],
                        'password' : objData['pwd'],
-                       'mobile'   : objData['mobile']
+                       'mobile'   : objData['mobile'],
+                       'header'   : objData['header']
                 }
             except :
                 raise BaseError(801) # 参数错误

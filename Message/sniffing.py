@@ -12,14 +12,16 @@ class Handler(WebRequestHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine    
     def get(self):
-        countInfo = yield self.toSniffing()
+        countInfo = yield self.callback_toSniffing()
         self.response(countInfo)
         
     @run_on_executor
-    def toSniffing(self):
+    def callback_toSniffing(self):
         try :
             super().get(self)
-            user   =self.getTokenToUser()        
+            objUser=self.objUserInfo
+            user=objUser['user']                   
+            #user   =self.getTokenToUser()        
             msg     = entity.Message()
             countInfo = msg.sniffing(user)
             return countInfo

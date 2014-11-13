@@ -6,6 +6,7 @@ from Framework.Base  import BaseError
 import logging
 import config
 from Service import uploadfile
+from User import entity
 
 
 '''
@@ -23,8 +24,10 @@ class Handler(WebRequestHandler):
             searchString=self.get_argument("q",default='')
             
             offset=offset*rowcount
-            user=self.getTokenToUser()
-                
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
+    
             db=self.openDB()
 
             #1. 查询圈子的帖子
@@ -65,7 +68,9 @@ class Handler(WebRequestHandler):
     def post(self,gid):
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.getUserInfo()
+            user=objUser['user']            
             objData=self.getRequestData()
             try:
                 topic=objData['topic']
@@ -98,8 +103,8 @@ class Handler(WebRequestHandler):
             insertData={
                 'gid'        : gid,
                 'user'       : user,
-                'nickname'   : 'nickname',
-                'header'     : 'header',
+                'nickname'   : objUser['nickname'],
+                'header'     : objUser['header'],
                 'topic'      : topic,
                 'summary'    : summary,
                 'contents'   : oFileHtml['content'],
@@ -132,7 +137,9 @@ class Handler(WebRequestHandler):
     def delete(self,gid):
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
             
             objData = self.getRequestData()
             ids=objData['ids']

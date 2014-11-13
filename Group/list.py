@@ -200,13 +200,13 @@ class info(WebRequestHandler):
             gid    =objData['gid']   # 圈子id
               
             # 看是HTML传过来的 files  是否含有 picture
-            if self.request.files == {} or 'picture' not in self.request.files :
+            if self.request.files == {} or 'upfile' not in self.request.files :
                 raise BaseError(801) # 参数错误
             
             objData={
                 'type'    :'groupheader',
                 'groupid' : gid,
-                'files'   : self.request.files['picture']
+                'files'   : self.request.files['upfile']
             }
             
             img=uploadfile()
@@ -222,7 +222,13 @@ class info(WebRequestHandler):
             ur=db.updateByPk('tbGroups',updateData,gid)
             if ur<=0 :BaseError(802) # 没有数据找到
             self.closeDB()
-            self.response(info)            
+            rspData={
+                "state": "SUCCESS",
+                "url": info['url']+'/'+info['filename'],
+                "filename": info['filename']
+            }                           
+            
+            self.response(rspData)            
         except BaseError as e:
             self.gotoErrorPage(e.code)
          

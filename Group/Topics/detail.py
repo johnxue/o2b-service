@@ -6,6 +6,7 @@ from Framework.Base  import BaseError
 import logging
 import config
 from Service import uploadfile
+from User import entity
 
 
 '''
@@ -22,7 +23,9 @@ class Handler(WebRequestHandler):
             offset=int(self.get_argument("o",default=0))
             rowcount=int(self.get_argument("r",default=1000))
             offset=offset*rowcount
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
                 
             db=self.openDB()
             
@@ -44,7 +47,9 @@ class Handler(WebRequestHandler):
     def put(self,tid):
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
             objData=self.getRequestData()
             try:
                 try :
@@ -93,8 +98,8 @@ class Handler(WebRequestHandler):
             
             #1.1 修改话题;
             updateData={
-                'nickname'   : 'nickname',
-                'header'     : 'header',
+                'nickname'   : objUser['nickname'],
+                'header'     : objUser['header'],
                 'updateTime' : '{{now()}}'
             }
             
@@ -124,8 +129,12 @@ class Handler(WebRequestHandler):
     def patch(self,tid) :
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
+            
             objData=self.getRequestData()
+            
             # 修改状态;
             updateData={}
             
@@ -168,7 +177,10 @@ class Handler(WebRequestHandler):
     def delete(self,tid):
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
+
             db=self.openDB()
             db.begin()
             

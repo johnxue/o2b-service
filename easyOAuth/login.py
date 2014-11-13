@@ -21,7 +21,9 @@ class Handler(WebRequestHandler):
         '''
         
         try :
-            super().get(self)
+            #super().get(self)
+            self._db_=None
+            
             if  self.getRequestHeader('app-secret')!=config.App_Secret:
                 raise BaseError(601) # 未经授权的第三方应用
             

@@ -5,6 +5,8 @@ from Framework.baseException import errorDic,BaseError
 import decimal,datetime,json
 import inspect
 from easyOAuth.userinfo import Token
+from User import entity
+
 
 # 屏幕非法链接
 class Base404Handler(tornado.web.RequestHandler):
@@ -76,7 +78,8 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def __init(self):
         self._db_=None
         self.checkAppKey()
-        self._now_time_ = datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
+        self.objUserInfo=self.getUserToObjct()
+        self._now_time_ = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def head(self,*args,**kwargs):
         self.__init()        
@@ -98,10 +101,12 @@ class WebRequestHandler(tornado.web.RequestHandler):
         
     def gotoErrorPage(self,error_code,help=False) :
         #在错误处理中如果数据库连接是打开发，应回滚并关闭,回滚前须提交的数据必须提交
-        if self._db_ is not None :
-            self._db_.rollback()
-            self.closeDB()
-            
+        try :
+            if self._db_ is not None :
+                self._db_.rollback()
+                self.closeDB()
+        except:
+            pass
         eid=int(error_code)
         try:
             error=errorDic[eid]
@@ -121,6 +126,13 @@ class WebRequestHandler(tornado.web.RequestHandler):
         if self.request.headers.get('app-key')!=config.App_Key :
             raise BaseError(601)
 
+    def getUserToObjct(self):
+        token=self.request.headers.get('Authorization')
+        hu=entity.user()
+        objUerInfo=hu.tokenToGet(token)
+        if not objUerInfo : raise BaseError(602) #未登录授权的应用
+        return objUerInfo
+
     def _tokenToUser(self,token):
         if token is not None  :
             myToken=Token(config.RedisConfig)
@@ -132,7 +144,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
             raise BaseError(602) 
         return user
 
-
+        
     def getTokenToUser(self):
         token=self.request.headers.get('Authorization')
         return self._tokenToUser(token)

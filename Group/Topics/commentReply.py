@@ -5,7 +5,7 @@ import re,json,os,datetime
 from Framework.Base  import BaseError
 import logging
 import config
-
+from User import entity
 
 '''
 查圈子的所有话题
@@ -16,7 +16,10 @@ class Handler(WebRequestHandler):
     def post(self,cid):
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']
+           
             objData=self.getRequestData()
             try:
                 gid=objData['gid']
@@ -38,7 +41,7 @@ class Handler(WebRequestHandler):
                 'tid'             : tid,
                 'cid'             : cid,
                 'user'            : user,
-                'nickname'        : 'nickname',
+                'nickname'        : objUser['nickname'],
                 'toReplyUser'     : toUser,
                 'toReplyNickname' : toNickname,
                 'contents'        : content,

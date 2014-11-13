@@ -12,10 +12,11 @@ import Product.follow
 import Address.list
 import Address.userAddress
 
-import AdSense.list
+import AdSense
+from AdSense import attribute,list,manage
 
-import News.list
-import News.detail
+import News
+from News import list,detail
 
 import ShoppingCart.list
 
@@ -110,6 +111,10 @@ handlers = [
             
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
+            (r"/o2b/v1.0.0/adSense/attribute", AdSense.attribute.info),
+            (r"/o2b/v1.0.0/adSense/([0-9]+)", AdSense.manage.Handler),
+            (r"/o2b/v1.0.0/adSense", AdSense.manage.Handler),           
+            
             #服务
             (r"/o2b/v1.0.0/service/uploadfile", Service.uploadfile.Handler),
             (r"/o2b/v1.0.0/service/EditHtml", Service.RichEditor.Handler),

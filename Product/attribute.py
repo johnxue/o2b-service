@@ -5,7 +5,9 @@ class info(WebRequestHandler):
 
     def get(self):
         try :
-            super().get(self)
+            #super().get(self)
+            self._db_=None
+            self.checkAppKey()            
             db=self.openDB()
 
             #1.1 查询产品属性；

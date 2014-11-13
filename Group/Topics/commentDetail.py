@@ -1,12 +1,12 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
-#from Service import RichEditor
-import re,json,os,datetime
 from Framework.Base  import BaseError
+
+import re,json,os,datetime
 import logging
 import config
 from Service import uploadfile
-
+from User import entity
 
 '''
 查圈子的所有话题
@@ -21,7 +21,9 @@ class Handler(WebRequestHandler):
             offset=int(self.get_argument("o",default=0))
             rowcount=int(self.get_argument("r",default=1000))
             offset=offset*rowcount
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']            
                 
             db=self.openDB()
             
@@ -74,7 +76,10 @@ class Handler(WebRequestHandler):
     def post(self,tid):
         try:
             super().post(self)
-            user=self.getTokenToUser()
+            #user=self.getTokenToUser()
+            objUser=self.objUserInfo
+            user=objUser['user']
+            
             objData=self.getRequestData()
             try:
                 gid=objData['gid']
@@ -103,8 +108,8 @@ class Handler(WebRequestHandler):
                 'gid'        : gid,
                 'tid'        : tid,
                 'user'       : user,
-                'nickname'   : 'nickname',
-                'header'     : 'header',
+                'nickname'   : objUser['nickname'],
+                'header'     : objUser['header'],
                 'contents'   : oFileHtml['content'],
                 'createTime' : '{{now()}}',
                 'isDelete'   : 'N',

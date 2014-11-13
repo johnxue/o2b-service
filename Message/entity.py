@@ -32,7 +32,10 @@ class Message :
             end
             
             local strKey='tbMsg:'..KEYS[1]
-            local id=redis.call("INCR", strKey..':COUNT')
+            
+            local id=redis.call("INCR", strKey..':AUTOID')
+            redis.call("INCR", strKey..':COUNT')
+
             local keyHM=strKey..':'..id
             redis.call("HMSET", keyHM,unpack(tab))
             
@@ -69,12 +72,14 @@ class Message :
         return countInfo
     
     # 消息列表
-    def getList(self,user,cat='UNREAD',offset=0,rowcount=-1) :
-        offset=offset*rowcount
+    def getList(self,user,cat='UNREAD',offset=0,rowcount=0) :
+        #offset=offset*rowcount
         # 详见getMsgList.lua
         luaScript=self.redisSelect+'''
             local offset   = ARGV[1]
             local rowcount = ARGV[2]
+            
+            offset=offset*rowcount
             
             local strKey = 'tbMsg:'..KEYS[1]
             local key    = strKey..':UNREAD'
@@ -93,7 +98,7 @@ class Message :
             
             local r=redis.call("SORT",key, unpack(tab))
             
-            local rows={}
+            local list={}
             for i=1,#r,6 do 
                 local t={}
                 t['id']    =  r[i]
@@ -102,8 +107,12 @@ class Message :
                 t['name']  = r[i+3]
                 t['title'] = r[i+4]
                 t['level'] = r[i+5]
-                rows[#rows+1]=t
+                list[#list+1]=t
             end
+            local count=redis.call("LLEN",key)
+            local rows={}
+            rows.list=list
+            rows.count=count
             return cmsgpack.pack(rows)
         '''
         ls          = self.rds.register_script(luaScript)
@@ -128,7 +137,8 @@ class Message :
             return r_lrem
         '''
         ls=self.rds.register_script(luaScript)
-        return ls(keys=[user],args=[msgId])                
+        return ls(keys=[user],args=[msgId])
+    
     
     def getMsg(self,mid):
         # 应判断用户权限
@@ -185,7 +195,7 @@ class Message :
                 ur = redis.call("LREM",keyUNREAD,1,id)
                 dr = redis.call("DEL",id)
              
-                if dr == 1 then 
+                if (r+ur+dr) > 0 then
                    redis.call("DECR",keyCount)
                    count=count+1
                 end

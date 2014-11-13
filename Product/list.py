@@ -6,8 +6,9 @@ class info(WebRequestHandler):
     def get(self):
         
         try :
-            super().get(self)
-        
+            #super().get(self)
+            self._db_=None
+            self.checkAppKey()        
             offset=int(self.get_argument("o",default='0'))
             rowcount=int(self.get_argument("r",default='1000'))
             offset=offset*rowcount

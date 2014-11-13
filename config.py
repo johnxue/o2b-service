@@ -14,6 +14,8 @@ DbConfig = {
   'raise_on_warnings' : True,
 }
 
+MysqlConfig=DbConfig
+'''
 MysqlConfig = {
   'pool_name'         : "dbpool",
   'pool_size'         : 16,
@@ -23,16 +25,24 @@ MysqlConfig = {
   'database'          : 'o2b',
   'raise_on_warnings' : True,
 }
+'''
 
 RedisConfig={
     'host'     : '192.168.1.210',
     'port'     : 6379,
     'db'       : 12,
-    'password' : 'jct2014redis',
+    'password' : 'jct2014redis'
 }
 
-imageRootPath='/var/www/o2b/v1.0.0/app'
 
+TableToRedisNo={
+    'tbAdSense' : '09',
+    'tbMsg'     : '10',
+    'tbUser'    : '12'
+}
+
+
+imageRootPath='/var/www/o2b/v1.0.0/app'
 imageConfig={
     'product.banner' : {
         'path' : imageRootPath+'/images/product',
