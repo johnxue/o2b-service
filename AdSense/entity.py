@@ -267,7 +267,7 @@ class adsense(object) :
                                 end
                                 tmpData[#tmpData+1]=jsonData['starttime']
                                 tmpData[#tmpData+1]=jsonData['endtime']
-                                tmpData[#tmpData+1]=jsonData['statusCode']
+                                tmpData[#tmpData+1]=jsonData['statuscode']
                                 tmpData[#tmpData+1]=jsonData['status']
                                 tmpData[#tmpData+1]=jsonData['totalTopic']
                                 tmpData[#tmpData+1]=jsonData['totalFollow']

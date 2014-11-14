@@ -45,29 +45,29 @@ TableToRedisNo={
 imageRootPath='/var/www/o2b/v1.0.0/app'
 imageConfig={
     'product.banner' : {
-        'path' : imageRootPath+'/images/product',
-        'url'  : '/images/product',
+        'path' : imageRootPath+'/images/products',
+        'url'  : '/images/products',
         'long' : 2560,
         'wide' : 450,
         'size' : 2*1024*1024
     },
     'product.large' : {
-            'path' : imageRootPath+'/images/product',
-            'url'  : '/images/product',
+            'path' : imageRootPath+'/images/products',
+            'url'  : '/images/products',
             'long' : 468,
             'wide' : 224,
             'size' : 1*1024*1024
     },
     'product.medium' : {
-            'path' : imageRootPath+'/images/product',
-            'url'  : '/images/product',
+            'path' : imageRootPath+'/images/products',
+            'url'  : '/images/products',
             'long' : 223,
             'wide' : 165,
             'size' : 1*1024*1024
     },
     'product.small' : {
-            'path' : imageRootPath+'/images/product',
-            'url'  : '/images/product',
+            'path' : imageRootPath+'/images/products',
+            'url'  : '/images/products',
             'long' : 60,
             'wide' : 60,
             'size' : 1*512*1024

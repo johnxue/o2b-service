@@ -6,7 +6,9 @@ class info(WebRequestHandler):
     def get(self,pcode):
         
         try :
-            super().get(self)
+            #super().get(self)
+            self._db_=None
+            self.checkAppKey()            
 
             row_BasicInfo={}
             row_HTML={}
