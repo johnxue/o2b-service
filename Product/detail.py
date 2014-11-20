@@ -48,3 +48,132 @@ class info(WebRequestHandler):
             
         except BaseError as e:
             self.gotoErrorPage(e.code)
+    
+    # 新增详细信息
+    def post(self):
+        try :
+            super().get(self)
+            objUser=self.objUserInfo
+            user=objUser['user']             
+            objData=self.getRequestData()
+                
+            # 增加产品
+            try :
+                data={
+                    'code'        : objData['c'],
+                    'pid'         : objData['pid'],
+                    'description' : objData['description'],
+                    'html'        : objData['html'],
+                }
+            except :
+                raise BaseError(801) # 参数错误
+            
+            data['createTime']='{{now()}}'
+            data['createUserId']=user            
+            
+            p=entity.product()
+            db=self.openDB()
+            id=p.addProductDetail(data,db)
+            self.closeDB()
+            row={
+                objData['c'] : id
+            }            
+            self.response(row)
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+        
+    # 变更产品内容
+    def put(self,pcode):
+        try :
+            super().get(self)
+            objUser=self.objUserInfo
+            user=objUser['user']            
+            objData=self.getRequestData()
+            if objData is None :
+                raise BaseError(801) # 参数错误
+                
+            lstData={
+                'Image'         : 'img',
+                'imagelarge'    : 'imgl',
+                'imageBanners'  : 'imgb',
+                'imageSmall'    : 'imgs',
+                'supplierCode'  : 'sc',
+                'categoryCode'  : 'cat',
+                'statusCode'    : 'st',
+                'startTime'     : 'stm',
+                'endTime'       : 'etm',
+                'currentPrice'  : 'cp',
+                'originalPrice' : 'op',
+                'totalAmount'   : 'ta',
+                'totalTopic'    : 'tt',
+                'totalFollow'   : 'tf',
+                'totalSold'     : 'ts',
+                'limit'         : 'lmt',
+            }
+            
+            for (k,v) in lstData.items():
+                try:
+                    data[k]=objData[v]
+                except:
+                    pass
+            
+            data['updateTime']='{{now}}'
+            data['updateUserId']=user
+            
+            ads=entity.adsense()
+            db=self.openDB()
+            aid=ads.update(data,id,db)
+            self.closeDB()
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+    
+    # 修改/设置广告参数   
+    def patch(self,pcode):
+        try :
+            super().get(self)
+            objUser=self.objUserInfo
+            user=objUser['user']                  
+            objData=self.getRequestData()
+            data={
+                'updateTime':'{{now()}}'
+            }
+            
+            try :
+                data['status']=objData['st'].upper()
+                data['comments']=objData['cm']
+            except :
+                raise BaseError(801) # 参数错误
+            
+            ads=entity.adsense()
+            db=self.openDB()
+            aid=ads.update(data,pcode,db)
+            self.closeDB()
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
+            
+    # 删除广告
+    def delete(self,pcode):
+        try :
+            super().get(self)
+            objUser=self.objUserInfo
+            user=objUser['user']
+            
+            ads=entity.adsense()
+            db=self.openDB()
+            aid=ads.delete(pcode,db)
+            self.closeDB()
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)       
+            
+            
+    # 同步mysql与redis    
+    def redisSync(self):
+        ads=entity.adsense()
+        db=self.openDB()
+        list=ads.sync(db)
+        self.closeDB()
+        return list
+        

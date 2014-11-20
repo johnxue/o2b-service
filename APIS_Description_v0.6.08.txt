@@ -1,4 +1,4 @@
-预售平台核心URI V0.5.10
+预售平台核心URI V0.6.08
 ==============================
 
 # 最后一次更新时间：2014.9.16
@@ -13,6 +13,7 @@
 2.2 Redis 说明：
     ip/prot: 192.168.1.210:6375
     数据库：
+    select 08 : 产品库
     select 09 : 广告库
     select 10 : 消息库
     select 12 : 用户库
@@ -228,6 +229,152 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
                  ...
                  html : 'html...'
               }
+
+4.2.4 产品图片上传
+URI: https://192.168.1.210/o2b/v1.0.0/product/images
+输入：
+     http header：Authorization
+     方法:post
+     参数:
+     {
+        "type" : "图像归属类型",
+	"code" : "产品编码"
+     }
+限制 : 图片最大不能超过4M
+输出： http status : 201
+{
+"url":"文件所在的路径",
+"filename": "文件名"
+}
+  
+实际输出文件名前面有:"tmp_"头，为临时文件，待文本信息正时提交后，自动去掉'tmp_'头成为正式文件
+注： type 图像归属类型 ： product.* | product.banner | product.large | product.medium | product.small
+          product.* 为不分产品类型时使用。
+    code 产品编码，如果新建产品是，因无产品编码，此项填"000000"(6个零)
+    
+4.2.5 加入新产品基本信息
+URI: https://192.168.1.210/o2b/v1.0.0/product
+输入：
+     方法:post
+     输入参数：
+     {
+       "c"    : '产品编号',
+       "bn"   : '批次',
+       "name" ： '产品名称',
+       "spec" ： '产品规格',
+       "desc" ： '产品描述',
+       "img"  ： '产品图片-中图',
+       "imgl" ： '产品图片名称-大图',
+       "imgb" ： '产品图片名称-广告条',
+       "imgs" ： '产品图片名称-小图用于订单显示',
+       "sc"   ： '供应商编码',
+       "cat"  ： '类型编码 - tbProductType.code',
+       "st"   ： '状态编码 - tbProductStatus.code',
+       "stm"  ： '开始时间',
+       "etm"  ： '结束时间',
+       "cp"   ： '当前价格',
+       "op"   ： '原价',
+       "ta"   ： '累计金额（交易额）',
+       "tt"   : '统计话题数',
+       "tf"   : '统计关注数',
+       "ts"   : '已销售数',
+       "lmt"  : '限额数（最大预售数）',
+       "mode":"SYNC"  [可选，同步时，只有一个mode参数，其它参数不需要输入]
+     }
+输出：
+http status : 201 
+{
+  '产品编号' : pid （即，产品id）
+}
+
+4.2.6 加入产品详细信息
+URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
+输入：
+     http header：Authorization
+     方法:post
+     参数：
+     {
+       "code"     : '产品code',
+       "desc"     : '产品详细描述',
+       "html"     : '产品详细信息html'，
+       "imgFiles" : '产品详细信息的图片列表',
+       "sort"     : '产品详细信息的显示顺序，如果有多个的话' [可选]
+     }
+输出：
+     { "产品pid" : '产品详细信息id' }
+     
+注： imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+    如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+
+     
+
+4.2.7 产品基本信息修改
+URI: https://192.168.1.210/o2b/v1.0.0/product/$id
+输入：
+     方法:put
+     修改参数：
+     {
+       "c"    : '产品编号',                                    [可选]
+       "bn"   : '批次',                                        [可选]
+       "name" ： '产品名称',                                    [可选]
+       "spec" ： '产品规格',                                    [可选]
+       "desc" ： '产品描述',                                    [可选]
+       "img"  ： '产品图片-中图',                                [可选]
+       "imgl" ： '产品图片名称-大图',                             [可选]
+       "imgb" ： '产品图片名称-广告条',                           [可选]
+       "imgs" ： '产品图片名称-小图用于订单显示',                   [可选]
+       "sc"   ： '供应商编码',                                   [可选]
+       "cat"  ： '类型编码 - tbProductType.code',                [可选]
+       "st"   ： '状态编码 - tbProductStatus.code',              [可选]
+       "stm"  ： '开始时间',                                     [可选]
+       "etm"  ： '结束时间',                                     [可选]
+       "cp"   ： '当前价格',                                     [可选]
+       "op"   ： '原价',                                        [可选]
+       "ta"   ： '累计金额（交易额）',                             [可选]
+       "tt"   : '统计话题数',                                    [可选]
+       "tf"   : '统计关注数',                                    [可选]
+       "ts"   : '已销售数',                                      [可选]
+       "lmt"  : '限额数（最大预售数）'                             [可选]
+
+       "d_desc"      : '产品详细描述',                            [可选]
+       "html"        : '产品详细信息html'，                       [可选]
+       "imgFiles"    : '更改产品详细信息HTML中的新增图片列表'|Null', [可选]
+       "sort"        : '产品详细信息的显示顺序，如果有多个的话'       [可选]       
+       
+     }
+输出：
+http status : 204 操作成功，无返回
+
+
+4.2.8 产品发布/审核未通过/暂停/停止状态设置
+URI: https://192.168.1.210/o2b/v1.0.0/product/$id
+输入：
+     方法:patch
+     查询参数：
+     {
+        "st"  : "OK|NOOK|PASUE|STOP|OFFLINE",     [WAIT-等待审核 NOOK-审核未通过 OK-发布  PASUE-暂停 STOP-停止  OFFLINE-下线]
+	"cm"  : "变更原由"
+     }
+输出：
+http status : 204 操作成功，无返回
+
+
+4.2.9 删除产品
+URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
+方法:delete
+输入：无
+输出：
+http status : 204 操作成功，无返回
+
+4.2.10 批量删除产品
+URI: https://192.168.1.210/o2b/v1.0.0/product
+方法:delete
+输入：
+{
+  "ids" :'pid1,pid2,...pidN'
+}
+输出：
+http status : 204 操作成功，无返回
 
 
 4.3 产品关注
@@ -867,7 +1014,7 @@ layout   - 广告位置布局
   o = 起始页                  [可选]
   r = 每页行数                [可选]
   s =channel|starttime       [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
-  v =asc|desc                [可选，默认为asc]
+  v =asc|desc                [可选，默认为asc，可选时S必须有值]
   q =单关键字查询条件           [可选]
   ts=广告投放开始时间           [可选,时间格式 yyyy-mm-dd hh:mm:ss]
   te=广告投放结束时间           [可选,时间格式 yyyy-mm-dd hh:mm:ss] 
@@ -880,20 +1027,21 @@ layout   - 广告位置布局
   {
      'count' : '复合条件的记录数'，
      'list'  : [
-        [id,pid,name,description,imagelarge,imageBanners,startTime,endTime,statuscode,status,channel,pageindex,level,subindex,a_status_code,a_status,channel_sort],
+        [id,pid,name,imagelarge,imageBanners,startTime,endTime,statuscode,status,channel,pageindex,level,subindex,
+	 a_status_code,a_status,channel_sort,a_starttime,a_endtime,description,totalTopic,totalFollow,totalSold,totalAmount],
         ...,
-        'id,pid,name,description,imagelarge,imageBanners,startTime,endTime,statuscode,status,channel,pageindex,level,subindex,a_status_code,a_status,channel_sort'
+        [id,pid,name,imagelarge,imageBanners,startTime,endTime,statuscode,status,channel,pageindex,level,subindex,
+         a_status_code,a_status,channel_sort,a_starttime,a_endtime,description,totalTopic,totalFollow,totalSold,totalAmount]'
      ]
   }
   注：
   id            - 广告id
   pid           - 产品id
   name          - 产品名称
-  description   - 产品描述
   imagelarge    - 广告条幅图(大)
   imageBanners  - 广告条幅图(中)
-  startTime     - 广告投放开始时间
-  endTime       - 广告投放结束时间
+  startTime     - 产品预售开始时间
+  endTime       - 产品预售结束时间
   statuscode    - 产品状态码
   status        - 产品状态
   channel       - 频道code
@@ -903,6 +1051,13 @@ layout   - 广告位置布局
   subindex      - 展示图序列
   a_status_code - 广告状态码
   a_status      - 广告状态
+  a_starttime   - 广告投放开始时间
+  a_endtime     - 广告投放结束时间
+  description   - 产品描述
+  totalTopic  - 话题数
+  totalFollow - 关注数
+  totalSold   - 销售数
+  totalAmount - 交易额
      
 
 4.8.4 新增/同步Redis缓存广告
@@ -1688,8 +1843,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
 }
   
 实际输出文件名前面有:"tmp_"头，为临时文件，待文本信息正时提交后，自动去掉'tmp_'头成为正式文件
-注： type 图像归属类型 ： header | prodcut.banner | prodcut.large | prodcut.medium | prodcut.small | order.returns |  group
-    code 产品编码     : 当类型是 header 或 groupid  时为空 ''
+注： type 图像归属类型 ： userheader | prodcut.banner | prodcut.large | prodcut.medium | prodcut.small | order.returns |  group
+    code 产品编码     : 当类型是 userheader 或 groupid  时为空 ''
                       当类型是 prodcut.banner|large|medium|small   时为 product 的产品编码
 	             当类型是 order.returns 时为 product 的产品编码
     order_id 订单id  : 当类型为 order.returns 有效

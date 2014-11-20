@@ -36,6 +36,7 @@ RedisConfig={
 
 
 TableToRedisNo={
+    'tbProductList':'08',
     'tbAdSense' : '09',
     'tbMsg'     : '10',
     'tbUser'    : '12'
@@ -44,6 +45,20 @@ TableToRedisNo={
 
 imageRootPath='/var/www/o2b/v1.0.0/app'
 imageConfig={
+    'product.*' : {
+        'path' : imageRootPath+'/images/products',
+        'url'  : '/images/products',
+        'long' : 2560,
+        'wide' : 900,
+        'size' : 4*1024*1024
+    },        
+    'product.detail' : {
+        'path' : imageRootPath+'/images/products/detail',
+        'url'  : '/images/products/detail',
+        'long' : 2560,
+        'wide' : 900,
+        'size' : 4*1024*1024
+    },    
     'product.banner' : {
         'path' : imageRootPath+'/images/products',
         'url'  : '/images/products',

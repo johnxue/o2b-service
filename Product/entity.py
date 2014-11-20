@@ -2,19 +2,20 @@ from Framework import dbRedis,dbMysql
 from Framework.baseException import errorDic,BaseError
 import msgpack,ujson,datetime
 import config
+from Service import uploadfile
 
 
-class adsense(object) :
+
+class product(object) :
 
     def __init__(self) :
-        self.table        = 'tbAdSense'
-        self.view         = 'vwAdSenseManage'
+        self.table        = 'tbProductList'
+        self.view         = 'vwProductList'
         self.rds=dbRedis.RedisCache()._connection
         self.SelectScript = "redis.call('SELECT','%s')" % (config.TableToRedisNo[self.table],)
         self.dropFunctionScript='''
             local function drop(table)
-                -- 清除所有广告数据
-                redis.call("SELECT","09")
+                -- 清除所有产品数据
                 local list=redis.call("KEYS",table..":*")
                 local i=0
                 for k,v in pairs(list) do
@@ -52,29 +53,6 @@ class adsense(object) :
 
                 -- 新增或更改记录
                 redis.call("HMSET", key,unpack(tab))
-
-                -- 提取分类
-
-                local channel=value['channel_code']
-                local pageindex=value['pageIndex']
-                local level=value['level_code']
-                local subindex=value['subIndex']
-
-                if not channel or type(channel) == 'userdata' then channel='' end
-                if not level   or type(level)   == 'userdata' then level='' end
-                
-                -- 存放频道的集合
-                redis.call("SADD",table..':CHANNELS',channel)
-                -- 存放频道下页面级数的集合
-                redis.call("SADD",table..':'..channel..':PageIndex',pageindex)
-
-                -- 存放每页的层级 01 , t00   (有序集合类型，记分卡每次增加1，代表该类型的数量)
-                local sk_PageLevel=KEYS[1]..':'..channel..':'..pageindex..':level:ZMEM'
-                redis.call("ZINCRBY",sk_PageLevel,1,level) 
-
-                -- 存放每页的每层的图像顺序  t00 , id  (有序集合类型)
-                local zk_PageLevel=table..':'..channel..':'..pageindex..':'..level..':index:ZMEM'
-                redis.call("ZADD",zk_PageLevel,subindex,key)            
 
                 return 1
             end
@@ -150,36 +128,90 @@ class adsense(object) :
         rid=ls(keys=[table,id],args=[ujson.dumps(data)])
         return rid
 
+    def addProductList(self,data,db,commit=True):
+        self.add('tbProductList','vwProductList', data, db, commit)
+    
+    def addProductDetail(self,data,db,commit=True):
+        self.add('tbProductDetail','vwProductDetail', data, db, commit)
 
-    def add(self,data,db,commit=True):
-        #1.加入到数据库
-        # db =dbMysql.Mysql()
-        aid=db.insert(self.table,data,commit)
-        if aid<1 : raise BaseError(703) # SQL执行错误
-        data=db.getToObjectByPk(self.view,{},id=aid)
-        #db.close()
+    def add(self,table,view,data,db,commit=True):
+        
+        #1. 将临时图像文件移动到正式文件夹中,并更替原有data里的图片文件名为正式文件名
+        imgFiles=data['Image']+','+data['imagelarge']+','+data['imageBanners']+','+data['imageSmall']
+        oHuf=uploadfile.uploadfile()
+        # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+        oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product.*',('000000',data['code']))
+        
+        #lstImgFiles=oFileHtml['files'].split(',')
+        for imgFile in oFileHtml['files'] :
+            imgFile=imgFile.split('/').pop()
+            if   '-banner-' in imgFile : data['imageBanners']=imgFile
+            elif '-large-'  in imgFile : data['imagelarge']=imgFile
+            elif '-medium-' in imgFile : data['Image']=imgFile
+            elif '-small-'  in imgFile : data['imageSmall']=imgFile
+        
+        #2.加入到数据库
+        pid=db.insert(table,data,commit)
+        if pid<1 : raise BaseError(703) # SQL执行错误
+        data=db.getToObjectByPk(view,{},id=pid,pk='pid')
 
         #2.加入到Redis
-        rid=self.saveToRedis(self.table,aid,data)
+        rid=self.saveToRedis(table,pid,data)
         if rid<1 : raise BaseError(823) # redis 执行错误
         return aid
 
-    def update(self,data,aid,db):
-        #1.数据更新到数据库
-        rw=db.updateByPk(self.table,data,aid)
+    def update(self,data,code,db):
+        
+        try:
+            image=data['Image']
+        except :
+            image=''
+            
+        try:
+            imagelarge=data['imagelarge']
+        except:
+            imagelarge=''
+            
+        try:
+            imageBanners=data['imageBanners']
+        except:
+            imageBanners=''
+            
+        try:
+            imageSmall=data['imageSmall']
+        except:
+            imageSmall=''
+            
+        #1. 将临时图像文件移动到正式文件夹中,并更替原有data里的图片文件名为正式文件名
+        imgFiles=image+','+imagelarge+','+imageBanners+','+imageSmall
+        if imgFiles!=',,,' :
+            oHuf=uploadfile.uploadfile()
+            # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product')         
+        
+            lstImgFiles=oFileHtml['files'].split(',')
+            for imgFile in lstImgFiles :
+                if   '-banner.' in imgFile : data['imageBanners']=imgFile
+                elif '-large.'  in imgFile : data['imagelarge']=imgFile
+                elif '-medium.' in imgFile : data['Image']=imgFile
+                elif '-small.'  in imgFile : data['imageSmall']=imgFile        
+        
+        
+        #2.数据更新到数据库
+        rw=db.updateByPk(self.table,data,id=code)
         if rw<0 : raise BaseError(705) # SQL执行错误
-        data=db.getToObjectByPk(self.view,{},id=aid)
+        data=db.getToObjectByPk(self.view,{},id=code)
         #2.数据更新到Redis
-        rw=self.saveToRedis(self.table,aid,data)
+        rw=self.saveToRedis(self.table,code,data)
         return rw
 
-    def delete(self,aid,db):  #删除数据库表及Redis里的数据
+    def delete(self,code,db):  #删除数据库表及Redis里的数据
         #1.数据更新到数据库
-        rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},id=aid) 
+        rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},id=code) 
         if rw<0 : raise BaseError(705) # SQL执行错误
 
         #2.数据更新到Redis
-        self.redisDelete(self.table,aid)
+        self.redisDelete(self.table,code)
         return rw
 
     # 数据库中的广告视图与Redis进行同步
@@ -359,9 +391,8 @@ class adsense(object) :
                 {{CONCAT('%s/'}},{{imagelarge) as imagelarge}},\
                 {{CONCAT('%s/'}},{{imageBanners) as imageBanners}},\
                 startTime,endTime,statuscode,status,channel,pageindex,\
-                level,subindex,a_status_code,a_status,channel_sort,a_starttime,a_endtime,\
-                description,totalTopic,totalFollow,totalSold,totalAmount" % (url_path_large,url_path_banner),
-                "limit" : "%s,%s" % (offset,rowcount)
+                level,subindex,a_status_code,a_status,channel_sort,a_starttime,a_endtime" % (url_path_large,url_path_banner),
+                                                                    "limit" : "%s,%s" % (offset,rowcount)
         }
 
         where={ "{{1}}" : "1" }
@@ -401,3 +432,4 @@ class adsense(object) :
             'list'  : rows
         }
         return rows
+    

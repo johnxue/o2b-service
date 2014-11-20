@@ -23,24 +23,40 @@ class uploadfile(object):
                 if not errPass : return False
         return True
     
-    def preImagesAndHtml(self,imgFiles,content,cat):
+    # 将提交的html文件中的上传图片转移到正式图片的文件夹中，并替换html相应的图片文件名
+    # imgFiles   - 存放临时文件名的字符串，文件名间用","号分隔
+    # content    - 需要处理的HTML内容，如不存在可设置为''或None
+    # cat        - 图片类型，系统根据图片类型自动匹配存放的目录
+    # replaceStr - 该变量为元组类型，用于临时文件名中需要替换成的字符描述，如需要将临时文件中的'000000'替换成'123456'
+    def preImagesAndHtml(self,imgFiles,content,cat,replaceStr=None):
         # 预处理，将临时图像文件移动到正式文件夹中
         try :
             lstFiles=['']*0
+            # 判断content的内容是否为空
+            if content is None or content=='' : 
+                contentIsNone=True
+                content=''
+            else : contentIsNone=False
             if (imgFiles is not None) and (len(imgFiles)>0) :
                 lstImg=imgFiles.split(',')
                 for imgFile in lstImg :
                     imgFile_Old=imgFile.replace("/images/tmp/",config.imageConfig['temp']['path']+'/')
                     imgFileName=imgFile.split('/').pop()
                     imgFile_New=config.imageConfig[cat]['path']+'/'+imgFileName
+                    
+                    # 如果replaceStr是非空的，将进行替换
+                    if replaceStr is not None :
+                        imgFile_New=imgFile_New.replace(replaceStr[0],replaceStr[1])
+
                     os.rename(imgFile_Old,imgFile_New) # os.rename只能同盘移动，否则就是拷贝速度
                     lstFiles.append(imgFile_New)       #成功移动的文件传入lstFiles
                     # 将content中的临时URL替换成最终的URL
                     imgURL=config.imageConfig[cat]['url']+'/'+imgFileName
-                    content=content.replace(imgFile,imgURL)
+                    if not contentIsNone :
+                        content=content.replace(imgFile,imgURL)
             result={
                 'files'   : lstFiles,
-                'content'    : content
+                'content' : content
             }            
             return result
         except :
@@ -136,7 +152,7 @@ class uploadfile(object):
         elif attribution=='order.returns' :
             tmp_name='tmp_returns-'+user+'-'+file_suffix
         else :
-            tmp_name='prodcut-'+code+'-'+attribution.split('.').pop().lower()+file_suffix
+            tmp_name='product-'+code+'-'+attribution.split('.').pop().lower()+file_suffix
             
         try:
             
@@ -186,16 +202,19 @@ class Handler(WebRequestHandler):
                 "url": rspData['url']+'/'+rspData['filename'],
                 "filename": rspData['filename'],
             }
-            updateData={
-                'img_header'  : rspData["filename"],
-                'updateTime'   : self._now_time_,
-                'updateUser'   : user
-            }            
+            
+            if objData['type']=='header':
+                updateData={
+                    'img_header'  : rspData["filename"],
+                    'updateTime'   : self._now_time_,
+                    'updateUser'   : user
+                }            
                         
-            db=self.openDB()
-            ur=db.updateByPk('tbUser',updateData,user,pk='user')
-            if ur<=0 :BaseError(802) # 没有数据找到
-            self.closeDB()            
+                db=self.openDB()
+                ur=db.updateByPk('tbUser',updateData,user,pk='user')
+                if ur<=0 :BaseError(802) # 没有数据找到
+                self.closeDB()            
+            
             self.response(rspData,angluar=False) # 返回查询结果        
 
         except BaseError as e:
