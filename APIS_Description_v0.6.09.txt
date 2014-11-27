@@ -1,7 +1,7 @@
-预售平台核心URI V0.6.08
+预售平台核心URI V0.6.09
 ==============================
 
-# 最后一次更新时间：2014.9.16
+# 最后一次更新时间：2014.11.27
 
 1. 概述(略)
 2. 开发环境说明
@@ -202,6 +202,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
   s =attribute|category|sort  [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
   v =排序条件                  [可选，取值根据 /o2b/v1.0.0/product/attribute json的value值]
   q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
+  mt=产品管理状态              [可选，只用于后台管理用]
   输出：
               {
                  product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
@@ -305,11 +306,38 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
      
 注： imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
     如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+    通过百度编辑器控件上传时 type='product.detail'
 
-     
 
-4.2.7 产品基本信息修改
-URI: https://192.168.1.210/o2b/v1.0.0/product/$id
+
+4.2.7 获得产品管理状态(产品管理)
+  URI: https://192.168.1.210/o2b/v1.0.0/my/product
+  输入：
+  pms = attribute
+  输出：
+        {
+                 "status": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+        }  
+  
+ 
+
+4.2.8 获得我的产品列表(产品管理)
+  URI: https://192.168.1.210/o2b/v1.0.0/my/product
+  输入：
+  o = 起始页                   [可选]
+  r = 每页行数                 [可选]
+  s =attribute|category|sort  [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
+  v =排序条件                  [可选，取值根据 /o2b/v1.0.0/product/attribute json的value值]
+  q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
+  mt=产品管理状态              [可选，只用于后台管理用]
+  输出：
+              {
+                 product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
+                            $totalTopic,$totalFollow,$totalSold,$totalAmount,$p_status_code,$p_status)],...]
+
+
+4.2.9 产品基本信息修改
+URI: https://192.168.1.210/o2b/v1.0.0/product
 输入：
      方法:put
      修改参数：
@@ -335,18 +363,31 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$id
        "tf"   : '统计关注数',                                    [可选]
        "ts"   : '已销售数',                                      [可选]
        "lmt"  : '限额数（最大预售数）'                             [可选]
-
-       "d_desc"      : '产品详细描述',                            [可选]
-       "html"        : '产品详细信息html'，                       [可选]
-       "imgFiles"    : '更改产品详细信息HTML中的新增图片列表'|Null', [可选]
-       "sort"        : '产品详细信息的显示顺序，如果有多个的话'       [可选]       
        
      }
 输出：
 http status : 204 操作成功，无返回
 
 
-4.2.8 产品发布/审核未通过/暂停/停止状态设置
+4.2.10 产品详细信息修改
+URI: https://192.168.1.210/o2b/v1.0.0/product/$id
+输入：
+     方法:put
+     修改参数：
+     {
+       "code"           : '产品编号',                            [可选]
+       "d_desc"      : '产品详细描述',                            [可选]
+       "html"        : '产品详细信息html'，                       [可选]
+       "imgFiles"    : '更改产品详细信息HTML中的新增图片列表'|Null', [可选]
+       "rImgFiles"   : '更改后需要删除的图片'                      [可选]
+       "sort"        : '产品详细信息的显示顺序，如果有多个的话'       [可选]       
+     }
+输出：
+http status : 204 操作成功，无返回
+
+
+
+4.2.11 产品发布/审核未通过/暂停/停止状态设置
 URI: https://192.168.1.210/o2b/v1.0.0/product/$id
 输入：
      方法:patch
@@ -359,14 +400,14 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$id
 http status : 204 操作成功，无返回
 
 
-4.2.9 删除产品
+4.2.12 删除产品
 URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
 方法:delete
 输入：无
 输出：
 http status : 204 操作成功，无返回
 
-4.2.10 批量删除产品
+4.2.13 批量删除产品
 URI: https://192.168.1.210/o2b/v1.0.0/product
 方法:delete
 输入：

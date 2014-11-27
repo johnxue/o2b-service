@@ -8,6 +8,7 @@ import Product.attribute
 import Product.list
 import Product.detail
 import Product.follow
+import Product.manage
 
 import Address.list
 import Address.userAddress
@@ -71,6 +72,9 @@ handlers = [
             (r"/o2b/v1.0.0/product", Product.list.info),
             (r"/o2b/v1.0.0/product/([0-9]+)/images", Service.uploadfile.Handler),
             (r"/o2b/v1.0.0/product/images", Service.uploadfile.Handler),
+            
+            (r"/o2b/v1.0.0/my/product", Product.manage.Handler),
+            
     
             #购物车管理
             (r"/o2b/v1.0.0/shoppingcart", ShoppingCart.list.info),

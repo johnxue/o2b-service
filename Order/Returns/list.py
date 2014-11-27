@@ -1,7 +1,8 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
+from Service import uploadfile
 import config
-import os
+
 
 class info(WebRequestHandler):
     
@@ -63,13 +64,19 @@ class info(WebRequestHandler):
             except :
                 raise BaseError(801) # 参数错误
             
-            imgFileOld=config.imageConfig['temp']['path']+'/'+imgProblem
-            imgFileName='returns-'+swapOrderNo+'-'+imgProblem[12:] # 取文件名imgFile.split('/').pop()
-            imgFileNew=config.imageConfig['order.returns']['path']+'/'+imgFileName
-            try :
-                os.rename(imgFileOld,imgFileNew) # os.rename只能同盘移动，否则就是拷贝速度
-            except :
-                raise BaseError(817) # 文件移动失败
+            imgFiles=imgProblem
+            # 将临时图像文件移动到正式文件夹中,并更替Content里的图片链接为正式连接
+            oHuf=uploadfile.uploadfile()
+            # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'order.returns',('tmp_returns','returns-'+swapOrderNo))             
+            
+            #imgFileOld=config.imageConfig['temp']['path']+'/'+imgProblem
+            #imgFileName='returns-'+swapOrderNo+'-'+imgProblem[12:] # 取文件名imgFile.split('/').pop()
+            #imgFileNew=config.imageConfig['order.returns']['path']+'/'+imgFileName
+            #try :
+            #    os.rename(imgFileOld,imgFileNew) # os.rename只能同盘移动，否则就是拷贝速度
+            #except :
+            #    raise BaseError(817) # 文件移动失败
                 
             db=self.openDB()
             db.begin()

@@ -129,39 +129,66 @@ class product(object) :
         return rid
 
     def addProductList(self,data,db,commit=True):
-        self.add('tbProductList','vwProductList', data, db, commit)
+        return self.add('tbProductList','vwProductList', data, db, commit)
+
+    def updateProductList(self,data,db,commit=True):
+        return self.update('tbProductList','vwProductList', data, db, commit)
     
     def addProductDetail(self,data,db,commit=True):
-        self.add('tbProductDetail','vwProductDetail', data, db, commit)
+        return self.add('tbProductDetail','tbProductDetail', data, db, commit)
+    
+    def updateProductDetail(self,data,db,commit=True):
+        return self.update('tbProductDetail','tbProductDetail', data, db, commit)    
 
     def add(self,table,view,data,db,commit=True):
         
         #1. 将临时图像文件移动到正式文件夹中,并更替原有data里的图片文件名为正式文件名
-        imgFiles=data['Image']+','+data['imagelarge']+','+data['imageBanners']+','+data['imageSmall']
+        try :
+            # 针对新增产品详细信息中的图片
+            imgFiles=data['imgFiles']
+        except:
+            # 针对新增产品图片
+            imgFiles=data['Image']+','+data['imagelarge']+','+data['imageBanners']+','+data['imageSmall']
+            
         oHuf=uploadfile.uploadfile()
         # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
-        oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product.*',('000000',data['code']))
-        
-        #lstImgFiles=oFileHtml['files'].split(',')
-        for imgFile in oFileHtml['files'] :
-            imgFile=imgFile.split('/').pop()
-            if   '-banner-' in imgFile : data['imageBanners']=imgFile
-            elif '-large-'  in imgFile : data['imagelarge']=imgFile
-            elif '-medium-' in imgFile : data['Image']=imgFile
-            elif '-small-'  in imgFile : data['imageSmall']=imgFile
-        
+        if table=='tbProductList' :
+            cat='product.*'
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,cat,('000000',data['code']))
+            #lstImgFiles=oFileHtml['files'].split(',')
+            for imgFile in oFileHtml['files'] :
+                imgFile=imgFile.split('/').pop()
+                if   '-banner.' in imgFile : data['imageBanners']=imgFile
+                elif '-large.'  in imgFile : data['imagelarge']=imgFile
+                elif '-medium.' in imgFile : data['Image']=imgFile
+                elif '-small.'  in imgFile : data['imageSmall']=imgFile
+        else :
+            cat='product.detail'
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,data['content'],'product.detail',('000000',data['code']))
+            # 真对产品详细信息应该用html字段
+            data['html']=oFileHtml['content']
+            del data['content']
+            del data['imgFiles']            
+
+            
         #2.加入到数据库
-        pid=db.insert(table,data,commit)
-        if pid<1 : raise BaseError(703) # SQL执行错误
-        data=db.getToObjectByPk(view,{},id=pid,pk='pid')
+        id=db.insert(table,data,commit)
+        if id<1 : raise BaseError(703) # SQL执行错误
+        if table=='tbProductList' :
+            data=db.getToObjectByPk(view,{},id=id,pk='pid')
+        else :
+            # 真对详情数据
+            data=db.getToObjectByPk(view,{},id)
+            
 
         #2.加入到Redis
-        rid=self.saveToRedis(table,pid,data)
+        rid=self.saveToRedis(table,id,data)
         if rid<1 : raise BaseError(823) # redis 执行错误
-        return aid
-
-    def update(self,data,code,db):
         
+        data['img_url']=config.imageConfig[cat]['url']
+        return data
+
+    def update(self,table,view,data,db,commit=True):
         try:
             image=data['Image']
         except :
@@ -182,32 +209,45 @@ class product(object) :
         except:
             imageSmall=''
             
-        #1. 将临时图像文件移动到正式文件夹中,并更替原有data里的图片文件名为正式文件名
-        imgFiles=image+','+imagelarge+','+imageBanners+','+imageSmall
-        if imgFiles!=',,,' :
-            oHuf=uploadfile.uploadfile()
-            # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
-            oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product')         
         
-            lstImgFiles=oFileHtml['files'].split(',')
-            for imgFile in lstImgFiles :
+        #1. 将临时图像文件移动到正式文件夹中,并更替原有data里的图片文件名为正式文件名
+        try :
+            # 针对新增产品详细信息中的图片
+            imgFiles=data['imgFiles']
+        except:
+            # 针对新增产品图片
+            imgFiles=data['Image']+','+data['imagelarge']+','+data['imageBanners']+','+data['imageSmall']
+            
+        oHuf=uploadfile.uploadfile()
+        # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+        if table=='tbProductList' :
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product.*',('000000',data['code']))
+            #lstImgFiles=oFileHtml['files'].split(',')
+            for imgFile in oFileHtml['files'] :
+                imgFile=imgFile.split('/').pop()
                 if   '-banner.' in imgFile : data['imageBanners']=imgFile
                 elif '-large.'  in imgFile : data['imagelarge']=imgFile
                 elif '-medium.' in imgFile : data['Image']=imgFile
-                elif '-small.'  in imgFile : data['imageSmall']=imgFile        
-        
-        
+                elif '-small.'  in imgFile : data['imageSmall']=imgFile
+        else :
+            oFileHtml=oHuf.preImagesAndHtml(imgFiles,data['content'],'product.detail',('000000',data['code']))
+            # 真对产品详细信息应该用html字段
+            data['html']=oFileHtml['content']
+            del data['content']
+            del data['imgFiles']            
+            
+
         #2.数据更新到数据库
         rw=db.updateByPk(self.table,data,id=code)
         if rw<0 : raise BaseError(705) # SQL执行错误
         data=db.getToObjectByPk(self.view,{},id=code)
         #2.数据更新到Redis
         rw=self.saveToRedis(self.table,code,data)
-        return rw
+        return data
 
-    def delete(self,code,db):  #删除数据库表及Redis里的数据
+    def delete(self,ids,db):  #删除数据库表及Redis里的数据
         #1.数据更新到数据库
-        rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},id=code) 
+        rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},'{{ in (%s)}}'%(ids)) 
         if rw<0 : raise BaseError(705) # SQL执行错误
 
         #2.数据更新到Redis
@@ -320,116 +360,77 @@ class product(object) :
         rows = msgpack.unpackb(listMsgPack,encoding='utf-8')
         return rows
 
-    def getAttribute(self,db) :
-        #db =dbMysql.Mysql()
-        #1.1 频道；
-        conditions = {
-            'select' : 'description,code,maxPly',
-            'order'  : 'sort'
-        }
-        rows_Channel = db.getAllToList('tbChannel',conditions)
-        
-        #1.2. 广告模式；
+    def getManageAttribute(self,db) :
+        #管理状态；
         conditions = {
             'select' : 'description,code',
+            'where'  : 'role="S"',
             'order'  : 'sort'
-        }        
-
-        rows_Mode = db.getAllToList('tbAdSenseMode',conditions)            
-
-        #1.3. 广告状态；
-        rows_Status = db.getAllToList('tbAdSenseStatus',conditions)
-
-        #1.4. 广告布局；
-        rows_Layout = db.getAllToList('tbAdSenseLayout',conditions)
-        #db.close()
-
-        #2. 错误处理
-        if len(rows_Channel)==0 or len(rows_Mode)==0 or len(rows_Layout)==0 or len(rows_Status)==0:
+        }
+        rows_List = db.getAllToList('tbProductManageStatus',conditions)
+        
+        #错误处理
+        if len(rows_List)==0:
             raise BaseError(802) # 无数据
 
         #3. 打包成json object
         rows={
-            'Channel' : rows_Channel,
-            'Mode'    : rows_Mode,
-            'Status'  : rows_Status,
-            'Layout'  : rows_Layout
+            'status' : rows_List,
         }
         return rows
 
-    # 在广告管理中得到广告列表（多查询模式）
-    def getAllList(self,param,db):
+    # 在产品管理中得到产品列表（多查询模式）
+    def getManageAllList(self,param,db):
+        
         # 分页控制
         offset       = param['offset']
         rowcount     = param['rowcount']
         offset=offset*rowcount
-
-        # 排序方案
-        order        = param['order']
-        ascOrDesc    = param['ascOrDesc']
-
-        # 关键字查询
+        
+        sortName     = param['sortName']
+        sortValue    = param['sortValue']
         searchString = param['searchString']
+        p_status     = param['p_status']       
 
-        # 按状态查询
-        status       = param['status']
-
-        # 按时间段查询
-        startTime    = param['startTime']
-        endTime      = param['endTime']
-
-        # 过滤器查询
-        filter       = param['filter']
-
-        now=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        url_path_large  = config.imageConfig['product.large']['url']
-        url_path_banner = config.imageConfig['product.banner']['url']
-
-
-        SELECT={
-            "select" : "id,pid,name,\
-                {{CONCAT('%s/'}},{{imagelarge) as imagelarge}},\
-                {{CONCAT('%s/'}},{{imageBanners) as imageBanners}},\
-                startTime,endTime,statuscode,status,channel,pageindex,\
-                level,subindex,a_status_code,a_status,channel_sort,a_starttime,a_endtime" % (url_path_large,url_path_banner),
-                                                                    "limit" : "%s,%s" % (offset,rowcount)
+        str_Order_by='';
+        str_where='';
+    
+        if sortName == 'sort':
+            str_Order_by='`%s` desc' % (sortValue)
+    
+        if sortName=='attribute' and sortValue!="ALL" :
+            str_where='`statusCode`="%s"' % (sortValue)
+        
+        if sortName=='category' and sortValue!="0000" :
+            str_where='`categoryCode`="%s"' % (sortValue) 
+            
+        if p_status!='' :
+            str_where='`p_status_code`="%s"' % (p_status)             
+    
+        sw=''
+        if len(searchString)>0 :
+            for word in searchString.split(' ') :
+                sw+='`name` like "%'+word+'%" or '
+            
+            searchString='%'+searchString.replace(' ','%')+'%'
+            str_where=' %s `name` like "%s"' % (sw,searchString)
+             
+        
+        #1.1 查询产品；
+        conditions = {
+            'select' : ('pid,code,categoryCode,name,image,starttime,endTime,statusCode,status,'
+                        'totalTopic,totalFollow,totalSold,totalAmount,p_status'), 
+            'limit'  : '%s,%s' % (offset,rowcount)
         }
-
-        where={ "{{1}}" : "1" }
-
-        if status       : where["a_status_code"]=status
-        if startTime    : where["a_startTime"]="{{>='"+startTime+"'}}"
-        if endTime      : where["b_endTime"]="{{<='"+endTime+"'}}"
-        if searchString : where["name"]="{{ like '%"+searchString+"%'}}"
-
-        if filter=='OPEN' :
-            where["a_starttime"]="{{<='"+now+"'}}"
-            where["a_endtime"]="{{>='"+now+"'}}"
-
-        if filter=='CLOSE' : where["a_endtime"]="{{<='"+now+"'}}"
-
-        #1. 计算符合条件的记录数
-        intCount=db.count('vwAdSenseManage',where)
-        if intCount==0 : raise BaseError(802) # 没有找到数据            
-
-        orderBy=order+','+ascOrDesc
-        if orderBy==','              : orderBy='STARTTIME,DESC'
-        if orderBy=='STARTTIME,ASC'  : SELECT['order']="a_starttime asc,channel_sort,pageindex,level,subindex"
-        if orderBy=='STARTTIME,DESC' : SELECT['order']="a_starttime desc,pageindex,level,subindex"
-        if orderBy=='CHANNEL,ASC'    : SELECT['order']="channel_sort asc ,pageindex,level,subindex"
-        if orderBy=='CHANNEL,DESC'   : SELECT['order']="channel_sort desc,pageindex,level,subindex"
-
-        if where : SELECT['where']=where
-
-        rows=db.getAllToList('vwAdSenseManage',SELECT)            
-
+        if str_where    : conditions['where']='1 and 1 '+str_where+'and createUserid=%s' % (user,)
+        if str_Order_by : conditions['order']=str_Order_by
+        
+        rows_list = db.getAllToList('vmProductManageList',conditions)  # 查询结果以List的方式返回  
+        
         #2. 错误处理
-        if len(rows)==0: raise BaseError(802) #802 未找到数据
-
-        #3. 打包成json object
-        rows = {
-            'count' : intCount,
-            'list'  : rows
-        }
+        if (len(rows_list)==0):
+            raise BaseError(802) # 未找到数据
+        
+        rows = {'rows' : rows_list }
         return rows
     

@@ -1,5 +1,6 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
+from Product import entity
     
 class info(WebRequestHandler):
     
@@ -50,7 +51,7 @@ class info(WebRequestHandler):
             self.gotoErrorPage(e.code)
     
     # 新增详细信息
-    def post(self):
+    def post(self,pid):
         try :
             super().get(self)
             objUser=self.objUserInfo
@@ -60,10 +61,11 @@ class info(WebRequestHandler):
             # 增加产品
             try :
                 data={
-                    'code'        : objData['c'],
-                    'pid'         : objData['pid'],
-                    'description' : objData['description'],
-                    'html'        : objData['html'],
+                    'code'        : objData['code'],
+                    'pid'         : pid,
+                    'description' : objData['desc'],
+                    'content'     : objData['html'],
+                    'imgFiles'    : objData['imgFiles']
                 }
             except :
                 raise BaseError(801) # 参数错误
@@ -73,11 +75,11 @@ class info(WebRequestHandler):
             
             p=entity.product()
             db=self.openDB()
-            id=p.addProductDetail(data,db)
+            row=p.addProductDetail(data,db)
             self.closeDB()
-            row={
-                objData['c'] : id
-            }            
+            #row={
+            #    objData['code'] : id
+            #}            
             self.response(row)
         except BaseError as e:
             self.gotoErrorPage(e.code)
@@ -113,7 +115,8 @@ class info(WebRequestHandler):
             
             for (k,v) in lstData.items():
                 try:
-                    data[k]=objData[v]
+                    if objData[v] is not None :
+                        data[k]=objData[v]
                 except:
                     pass
             

@@ -41,19 +41,28 @@ class uploadfile(object):
                 lstImg=imgFiles.split(',')
                 for imgFile in lstImg :
                     imgFile_Old=imgFile.replace("/images/tmp/",config.imageConfig['temp']['path']+'/')
-                    imgFileName=imgFile.split('/').pop()
-                    imgFile_New=config.imageConfig[cat]['path']+'/'+imgFileName
+                    imgFileName_Old=imgFile.split('/').pop()
+                    imgFileName_New=imgFileName_Old
                     
                     # 如果replaceStr是非空的，将进行替换
                     if replaceStr is not None :
-                        imgFile_New=imgFile_New.replace(replaceStr[0],replaceStr[1])
+                        imgFileName_New=imgFileName_New.replace(replaceStr[0],replaceStr[1])  
+                                           
+                    imgFile_New=config.imageConfig[cat]['path']+'/'+imgFileName_New
+                    
+                        
+                    #try:
+                    #    os.remove(imgFile_New)
+                    #except :
+                    #    pass
 
                     os.rename(imgFile_Old,imgFile_New) # os.rename只能同盘移动，否则就是拷贝速度
                     lstFiles.append(imgFile_New)       #成功移动的文件传入lstFiles
                     # 将content中的临时URL替换成最终的URL
-                    imgURL=config.imageConfig[cat]['url']+'/'+imgFileName
+                    imgURL=config.imageConfig[cat]['url']+'/'+imgFileName_New
                     if not contentIsNone :
                         content=content.replace(imgFile,imgURL)
+                        content=content.replace(imgFileName_Old,imgFileName_New)
             result={
                 'files'   : lstFiles,
                 'content' : content
@@ -124,13 +133,14 @@ class uploadfile(object):
         image_path = config.imageConfig[attribution]['path']                  # 路经从config中获得
         temp_url   = config.imageConfig['temp']['url']                        # 临时URL
         image_format = '.'+send_file['filename'].split('.').pop().lower()     # 文件格式后缀转小写
-        file_suffix='-' + str(int(time.time())) + str(random.randint(1, 100000))+image_format   # 拼文件后缀
+        file_random=str(int(time.time())) + str(random.randint(1, 100000))    # 随机数=时间+随机数
+        file_suffix=file_random+image_format   # 拼文件后缀
 
         '''
             指定存储目录进行存储，并产生规范的文件名。
             header      : header+'-'+user+'.jpg'
             groupheader : groupheader+'-'+group_id+'.jpg'
-            prodcut     : prodcut+'-'+code+'-'+'banner|large|medium|small'+'.jpg'
+            prodcut     : prodcut+'-'+code+'-'+随机数+'banner|large|medium|small'+'.jpg'
             group       : group+'-'+user+'-'+group_id+'.jpg'            
         '''
         
@@ -140,19 +150,21 @@ class uploadfile(object):
         if attribution=='userheader':
             temp_path  = config.imageConfig['userheader']['path']                # 临时目录 = 真实目录
             temp_url   = config.imageConfig['userheader']['url']                 # 临时URL = 真实URL
-            tmp_name='header-'+user+file_suffix                              # 注：如果用户多次更换头像可能产生一堆垃圾需要处理
+            tmp_name='header-'+user+'-'+file_suffix                              # 注：如果用户多次更换头像可能产生一堆垃圾需要处理
         elif attribution=='groupheader':
             temp_path  = config.imageConfig['groupheader']['path']          # 临时目录 = 真实目录
             temp_url   = config.imageConfig['groupheader']['url']           # 临时URL = 真实URL
-            tmp_name='groupheader-'+groupid+file_suffix                      # 注：如果用户多次更换头像可能产生一堆垃圾需要处理
+            tmp_name='groupheader-'+groupid+'-'+file_suffix                      # 注：如果用户多次更换头像可能产生一堆垃圾需要处理
         elif attribution=='news':
             tmp_name='news-'+user+'-'+file_suffix
         elif attribution=='group':
-            tmp_name='group-'+user+'-'+groupid+file_suffix
+            tmp_name='group-'+user+'-'+groupid+'-'+file_suffix
         elif attribution=='order.returns' :
             tmp_name='tmp_returns-'+user+'-'+file_suffix
+        elif attribution=='product.detail' :
+            tmp_name='product-detail-'+code+'-'+file_suffix
         else :
-            tmp_name='product-'+code+'-'+attribution.split('.').pop().lower()+file_suffix
+            tmp_name='product-'+code+'-'+file_random+'-'+attribution.split('.').pop().lower()+image_format        
             
         try:
             
