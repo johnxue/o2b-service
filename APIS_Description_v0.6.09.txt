@@ -1,7 +1,7 @@
 预售平台核心URI V0.6.09
 ==============================
 
-# 最后一次更新时间：2014.11.27
+# 最后一次更新时间：2014.11.28
 
 1. 概述(略)
 2. 开发环境说明
@@ -226,9 +226,30 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
    
    输出：
               {
-                 'pid' : '123456',
-                 ...
-                 html : 'html...'
+                 'basic' : {
+		    'name'          : '产品名称',
+		    'description'   : '产品描述',
+		    'image'         : '产品图片-中图',
+		    'imageBanners'  : '产品图片名称-广告条',
+		    'starttime'     : '开始时间' ,
+		    'endtime'       : '结束时间',
+		    'status'        : '状态 - tbProductStatus.code',
+		    'supplierCode'  : '供应商编码',
+		    'supplierName'  : '供应商名称',
+		    'currentPrice'  : '当前价格',
+		    'originalPrice' : '原价',
+		    'totalTopic'    : '统计话题数',
+		    'totalFollow'   : '统计关注数',
+		    'totalSold'     : '已销售数',
+		    'limit'         : '限额数（最大可预售数）',
+		    'totalAmount'   : '累计金额（交易额）',
+		    'code'          : '产品编码',
+		    'pid'           : '产品ID'
+                 },
+                 'html' : {
+		     'description' : '产品详细描述',
+		     'html'        : '产品详细信息html'
+		 }
               }
 
 4.2.4 产品图片上传
@@ -313,7 +334,9 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
 4.2.7 获得产品管理状态(产品管理)
   URI: https://192.168.1.210/o2b/v1.0.0/my/product
   输入：
-  pms = attribute
+    方法:GET
+    参数：
+    pms = attribute
   输出：
         {
                  "status": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
@@ -324,6 +347,8 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
 4.2.8 获得我的产品列表(产品管理)
   URI: https://192.168.1.210/o2b/v1.0.0/my/product
   输入：
+  方法：GET
+  参数：
   o = 起始页                   [可选]
   r = 每页行数                 [可选]
   s =attribute|category|sort  [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
@@ -332,8 +357,11 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
   mt=产品管理状态              [可选，只用于后台管理用]
   输出：
               {
-                 product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
-                            $totalTopic,$totalFollow,$totalSold,$totalAmount,$p_status_code,$p_status)],...]
+	      
+                 product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,
+		           $statusCode,$status,$totalTopic,$totalFollow,$totalSold,
+			   $totalAmount,$p_status_code,$p_status,$supplierName,$nickname)],...]
+	       }
 
 
 4.2.9 产品基本信息修改
@@ -375,7 +403,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$id
      方法:put
      修改参数：
      {
-       "code"           : '产品编号',                            [可选]
+       "code"        : '产品编号',                            [可选]
        "d_desc"      : '产品详细描述',                            [可选]
        "html"        : '产品详细信息html'，                       [可选]
        "imgFiles"    : '更改产品详细信息HTML中的新增图片列表'|Null', [可选]

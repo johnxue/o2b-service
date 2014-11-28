@@ -395,42 +395,58 @@ class product(object) :
         str_Order_by='';
         str_where='';
     
+        where={ "{{1}}" : "1" }
+        
         if sortName == 'sort':
             str_Order_by='`%s` desc' % (sortValue)
     
         if sortName=='attribute' and sortValue!="ALL" :
             str_where='`statusCode`="%s"' % (sortValue)
+            where['statusCode']=sortValue
         
         if sortName=='category' and sortValue!="0000" :
-            str_where='`categoryCode`="%s"' % (sortValue) 
+            str_where='`categoryCode`="%s"' % (sortValue)
+            where['categoryCode']=sortValue
+            
             
         if p_status!='' :
-            str_where='`p_status_code`="%s"' % (p_status)             
-    
-        sw=''
-        if len(searchString)>0 :
-            for word in searchString.split(' ') :
-                sw+='`name` like "%'+word+'%" or '
+            str_where='`p_status_code`="%s"' % (p_status)
+            where['p_status_code']=p_status
             
-            searchString='%'+searchString.replace(' ','%')+'%'
-            str_where=' %s `name` like "%s"' % (sw,searchString)
-             
-        
-        #1.1 查询产品；
+    
+        #sw=''
+        if len(searchString)>0 :
+            #for word in searchString.split(' ') :
+            #    sw+='`name` like "%'+word+'%" or '
+            
+            #searchString='%'+searchString.replace(' ','%')+'%'
+            #str_where=' %s `name` like "%s"' % (sw,searchString)
+            str_where="`name` like "+"'%"+searchString+"%'"
+            where["name"]="{{ like '%"+searchString+"%'}}"
+            
         conditions = {
-            'select' : ('pid,code,categoryCode,name,image,starttime,endTime,statusCode,status,'
-                        'totalTopic,totalFollow,totalSold,totalAmount,p_status'), 
+            'select' : ("pid,code,categoryCode,name,{{CONCAT('"+config.imageConfig['product.small']['url']+"/'}},{{imageSmall) as imageSmall}},"
+                        "starttime,endTime,statusCode,status,totalTopic,totalFollow,totalSold,totalAmount,p_status_code,p_status,supplierName,nickname"), 
             'limit'  : '%s,%s' % (offset,rowcount)
         }
         if str_where    : conditions['where']='1 and 1 '+str_where+'and createUserid=%s' % (user,)
         if str_Order_by : conditions['order']=str_Order_by
         
+
+        #1. 查询圈子的总帖子数
+        intCountComment=db.count('vmProductManageList',where)
+        if intCountComment==0 : raise BaseError(802) # 没有找到数据            
+
+        #1.1 查询产品；
         rows_list = db.getAllToList('vmProductManageList',conditions)  # 查询结果以List的方式返回  
         
         #2. 错误处理
         if (len(rows_list)==0):
             raise BaseError(802) # 未找到数据
         
-        rows = {'rows' : rows_list }
+        rows = {
+            'count' : intCountComment,
+            'rows' : rows_list
+        }
         return rows
     
