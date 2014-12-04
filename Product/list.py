@@ -61,7 +61,11 @@ class info(WebRequestHandler):
                 raise BaseError(802) # 未找到数据
         
             #3. 打包成json object
-            rows = {'rows' : rows_list }
+            rows = {
+                'struct':'pid,code,categoryCode,name,image,starttime,endTime,statusCode,status,'
+                          'totalTopic,totalFollow,totalSold,totalAmount',             
+                'rows' : rows_list
+            }
             self.response(rows)
                         
         except BaseError as e:
@@ -116,7 +120,8 @@ class info(WebRequestHandler):
             data['isOffline'] = 'N' #是否下线
             data['isDelete']  = 'N'  #是否删除
             data['createTime']='{{now()}}'
-            data['createUserId']=user            
+            data['createUserId']=user
+            data['p_status']='WAIT'
             
             p=entity.product()
             db=self.openDB()
@@ -163,6 +168,8 @@ class info(WebRequestHandler):
                 'limit'         : 'lmt',
             }
             
+            data={}
+            
             for (k,v) in lstData.items():
                 try:
                     data[k]=objData[v]
@@ -177,7 +184,7 @@ class info(WebRequestHandler):
             
             p=entity.product()
             db=self.openDB()
-            rowData=p.changeProductList(data,db)
+            rowData=p.updateProductList(data['code'],data,db)
             self.closeDB()
             self.response(rowData)
             #if row>0 :

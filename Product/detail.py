@@ -1,6 +1,7 @@
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
 from Product import entity
+import config
     
 class info(WebRequestHandler):
     
@@ -17,16 +18,27 @@ class info(WebRequestHandler):
             db=self.openDB()
             
             #1.1 查询产品基本信息；
+            url_path_medium = config.imageConfig['product.medium']['url']
+            url_path_large  = config.imageConfig['product.large']['url']
+            url_path_banner = config.imageConfig['product.banner']['url']
+            url_path_small  = config.imageConfig['product.small']['url']
             conditions = {
-                'select' : ('name,description,image,imageBanners,starttime,endtime,status,'
-                           'supplierCode,supplierName,currentPrice,originalPrice,'
-                           'totalTopic,totalFollow,totalSold,limit,totalAmount,code,pid') 
+                'select' : ("name,description,"
+                            "{{CONCAT('%s/'}},{{image) as image}},"
+                            "{{CONCAT('%s/'}},{{imagelarge) as imagelarge}},"
+                            "{{CONCAT('%s/'}},{{imageBanners) as imageBanners}},"
+                            "{{CONCAT('%s/'}},{{imageSmall) as imageSmall}},"
+                            "starttime,endtime,statusCode,status,"
+                           "supplierCode,supplierName,currentPrice,originalPrice,"
+                           "totalTopic,totalFollow,totalSold,limit,totalAmount,code,pid,"
+                           "batchNo,specification,categoryCode,category" % (url_path_medium,url_path_large,url_path_banner,url_path_small)
+                           ) 
             }
             row_basic = db.getToObjectByPk('vwProductList',conditions,pcode,pk='code')
             
             #1.2. 查询产品详情；
             conditions = {
-                'select' : 'description,html',
+                'select' : 'id,description,html,sort',
                 'order'  : 'sort'
             }
             rows_html = db.getAllToList('tbProductDetail',conditions,pcode,pk='code')
@@ -42,7 +54,10 @@ class info(WebRequestHandler):
             #3. 打包成json object
             rows={
                 'basic' : row_basic,
-                'html' : rows_html
+                'html' : {
+                    'struct':conditions['select'],
+                    'list'  : rows_html
+                }
             }
         
             self.response(rows)
@@ -65,10 +80,15 @@ class info(WebRequestHandler):
                     'pid'         : pid,
                     'description' : objData['desc'],
                     'content'     : objData['html'],
-                    'imgFiles'    : objData['imgFiles']
+                    'imgFiles'    : objData['imgFiles'],
                 }
             except :
                 raise BaseError(801) # 参数错误
+            
+            try:
+                data['sort'] = objData['sort']
+            except:
+                data['sort']='1'
             
             data['createTime']='{{now()}}'
             data['createUserId']=user            
@@ -85,7 +105,7 @@ class info(WebRequestHandler):
             self.gotoErrorPage(e.code)
         
     # 变更产品内容
-    def put(self,pcode):
+    def put(self,pid):
         try :
             super().get(self)
             objUser=self.objUserInfo
@@ -95,23 +115,16 @@ class info(WebRequestHandler):
                 raise BaseError(801) # 参数错误
                 
             lstData={
-                'Image'         : 'img',
-                'imagelarge'    : 'imgl',
-                'imageBanners'  : 'imgb',
-                'imageSmall'    : 'imgs',
-                'supplierCode'  : 'sc',
-                'categoryCode'  : 'cat',
-                'statusCode'    : 'st',
-                'startTime'     : 'stm',
-                'endTime'       : 'etm',
-                'currentPrice'  : 'cp',
-                'originalPrice' : 'op',
-                'totalAmount'   : 'ta',
-                'totalTopic'    : 'tt',
-                'totalFollow'   : 'tf',
-                'totalSold'     : 'ts',
-                'limit'         : 'lmt',
+                'id'          : 'id',
+                'code'        : 'code',
+                'description' : 'desc',
+                'html'        : 'html',
+                'imgFiles'    : 'imgFiles',
+                'rImgFiles'   : 'rImgFiles',
+                'sort'        : 'sort'
             }
+            
+            data={}
             
             for (k,v) in lstData.items():
                 try:
@@ -120,18 +133,24 @@ class info(WebRequestHandler):
                 except:
                     pass
             
-            data['updateTime']='{{now}}'
+            try :
+                id = data['id']
+            except:
+                raise BaseError(801) # 参数错误                
+                
+                
+            data['updateTime']='{{now()}}'
             data['updateUserId']=user
             
-            ads=entity.adsense()
+            p=entity.product()
             db=self.openDB()
-            aid=ads.update(data,id,db)
+            returnData=p.updateProductDetail(id,data,db)
             self.closeDB()
-            self.response()
+            self.response(returnData)
         except BaseError as e:
             self.gotoErrorPage(e.code)
     
-    # 修改/设置广告参数   
+    # 下线产品再发（等待审核）/审核未通过/暂停/停止状态设置
     def patch(self,pcode):
         try :
             super().get(self)
@@ -142,30 +161,34 @@ class info(WebRequestHandler):
                 'updateTime':'{{now()}}'
             }
             
-            try :
-                data['status']=objData['st'].upper()
-                data['comments']=objData['cm']
-            except :
-                raise BaseError(801) # 参数错误
+            try:
+                data['batchNo']=objData['bn']
+                data['p_status']='WAIT'
+            except:
+                try :
+                    data['p_status']=objData['st'].upper()
+                    data['comments']=objData['cm']
+                except :
+                    raise BaseError(801) # 参数错误
             
-            ads=entity.adsense()
+            p=entity.product()
             db=self.openDB()
-            aid=ads.update(data,pcode,db)
+            p.updateProductStatus(data,pcode,db)
             self.closeDB()
             self.response()
         except BaseError as e:
             self.gotoErrorPage(e.code)
             
-    # 删除广告
+    # 删除产品
     def delete(self,pcode):
         try :
             super().get(self)
             objUser=self.objUserInfo
             user=objUser['user']
             
-            ads=entity.adsense()
+            p=entity.product()
             db=self.openDB()
-            aid=ads.delete(pcode,db)
+            p.delete(pcode,db)
             self.closeDB()
             self.response()
         except BaseError as e:

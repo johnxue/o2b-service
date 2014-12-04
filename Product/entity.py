@@ -131,14 +131,14 @@ class product(object) :
     def addProductList(self,data,db,commit=True):
         return self.add('tbProductList','vwProductList', data, db, commit)
 
-    def updateProductList(self,data,db,commit=True):
-        return self.update('tbProductList','vwProductList', data, db, commit)
+    def updateProductList(self,code,data,db,commit=True):
+        return self.update('tbProductList','vwProductList', code,data, db, commit)
     
     def addProductDetail(self,data,db,commit=True):
         return self.add('tbProductDetail','tbProductDetail', data, db, commit)
     
-    def updateProductDetail(self,data,db,commit=True):
-        return self.update('tbProductDetail','tbProductDetail', data, db, commit)    
+    def updateProductDetail(self,id,data,db,commit=True):
+        return self.update('tbProductDetail','tbProductDetail',id,data, db, commit)    
 
     def add(self,table,view,data,db,commit=True):
         
@@ -185,10 +185,23 @@ class product(object) :
         rid=self.saveToRedis(table,id,data)
         if rid<1 : raise BaseError(823) # redis 执行错误
         
-        data['img_url']=config.imageConfig[cat]['url']
+        #data['img_url']=config.imageConfig[cat]['url']
+        # 拼图片的URL
+        imageList='Image,imagelarge,imageBanners,imageSmall'.split(',')
+        for imgFile in imageList :
+            try :
+                filename=data[imgFile]
+                if   '-banner.' in filename : url=config.imageConfig['product.banner']['url']
+                elif '-large.'  in filename : url=config.imageConfig['product.large']['url']
+                elif '-medium.' in filename : url=config.imageConfig['product.medium']['url']
+                elif '-small.'  in filename : url=config.imageConfig['product.small']['url']                
+                data[imgFile]=url+'/'+filename
+            except:
+                pass
+            
         return data
 
-    def update(self,table,view,data,db,commit=True):
+    def update(self,table,view,code,data,db,commit=True):
         try:
             image=data['Image']
         except :
@@ -216,42 +229,97 @@ class product(object) :
             imgFiles=data['imgFiles']
         except:
             # 针对新增产品图片
-            imgFiles=data['Image']+','+data['imagelarge']+','+data['imageBanners']+','+data['imageSmall']
-            
-        oHuf=uploadfile.uploadfile()
-        # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
-        if table=='tbProductList' :
-            oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product.*',('000000',data['code']))
-            #lstImgFiles=oFileHtml['files'].split(',')
-            for imgFile in oFileHtml['files'] :
-                imgFile=imgFile.split('/').pop()
-                if   '-banner.' in imgFile : data['imageBanners']=imgFile
-                elif '-large.'  in imgFile : data['imagelarge']=imgFile
-                elif '-medium.' in imgFile : data['Image']=imgFile
-                elif '-small.'  in imgFile : data['imageSmall']=imgFile
-        else :
-            oFileHtml=oHuf.preImagesAndHtml(imgFiles,data['content'],'product.detail',('000000',data['code']))
-            # 真对产品详细信息应该用html字段
-            data['html']=oFileHtml['content']
-            del data['content']
-            del data['imgFiles']            
+            imgFiles=image+\
+                ((','+imagelarge) if imagelarge!='' else '')+\
+                ((','+imageBanners) if imageBanners!='' else '')+\
+                ((','+imageSmall) if imageSmall!='' else '')
+
+        oHuf=uploadfile.uploadfile()        
+        if imgFiles!='' :
+            # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}
+            if table=='tbProductList' :
+                oFileHtml=oHuf.preImagesAndHtml(imgFiles,None,'product.*',('000000',data['code']))
+                #lstImgFiles=oFileHtml['files'].split(',')
+                for imgFile in oFileHtml['files'] :
+                    imgFile=imgFile.split('/').pop()
+                    if   '-banner.' in imgFile : data['imageBanners']=imgFile
+                    elif '-large.'  in imgFile : data['imagelarge']=imgFile
+                    elif '-medium.' in imgFile : data['Image']=imgFile
+                    elif '-small.'  in imgFile : data['imageSmall']=imgFile
+            else :
+                oFileHtml=oHuf.preImagesAndHtml(imgFiles,data['html'],'product.detail',('000000',data['code']))
+                # 真对产品详细信息应该用html字段
+                data['html']=oFileHtml['content']
+                #del data['content']
+                #del data['imgFiles']
+        
+        try :
+            removeImgFiles=data['rImgFiles'].split(',')
+        except:
+            removeImgFiles=None
+        
+        # 插入失败后删除成功移动的文件
+        if removeImgFiles is not None :
+            oHuf.delFiles(removeImgFiles)            
             
 
         #2.数据更新到数据库
-        rw=db.updateByPk(self.table,data,id=code)
+        if table=='tbProductList' :
+            rw=db.updateByPk(self.table,data,id=code,pk='code')
+        else :
+            keys=data.keys()
+            delKeysList=['imgFiles','rImgFiles','id']
+            for k in delKeysList :
+                if k in keys : del data[k]
+            rw=db.updateByPk('tbProductDetail',data,code)
+        
         if rw<0 : raise BaseError(705) # SQL执行错误
-        data=db.getToObjectByPk(self.view,{},id=code)
+        if table=='tbProductList' :
+            data=db.getToObjectByPk(self.view,{},id=code,pk='code')
+        else :
+            data=db.getToObjectByPk('tbProductDetail',{},code)
+            
+        #2.数据更新到Redis
+        # Redis这里有一个问题，多条详细信息时没有处理
+        rw=self.saveToRedis(self.table,code,data)
+        
+        if table=='tbProductList' :
+            # 拼图片的URL
+            imageList='Image,imagelarge,imageBanners,imageSmall'.split(',')
+            for imgFile in imageList :
+                try :
+                    filename=data[imgFile]
+                    if   '-banner.' in filename : url=config.imageConfig['product.banner']['url']
+                    elif '-large.'  in filename : url=config.imageConfig['product.large']['url']
+                    elif '-medium.' in filename : url=config.imageConfig['product.medium']['url']
+                    elif '-small.'  in filename : url=config.imageConfig['product.small']['url']                
+                    data[imgFile]=url+'/'+filename
+                except:
+                    pass
+        
+        return data
+
+    def updateProductStatus(self,data,code,db,commit=True):
+        if data is None or len(data)==0 :
+            return None
+            
+        #2.数据更新到数据库
+        rw=db.updateByPk(self.table,data,id=code,pk='pid')
+        if rw<0 : raise BaseError(705) # SQL执行错误
+        data=db.getToObjectByPk(self.view,{},id=code,pk='pid')
         #2.数据更新到Redis
         rw=self.saveToRedis(self.table,code,data)
         return data
 
+
+
     def delete(self,ids,db):  #删除数据库表及Redis里的数据
         #1.数据更新到数据库
-        rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},'{{ in (%s)}}'%(ids)) 
+        rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},'{{ in (%s)}}'%(ids),pk='pid') 
         if rw<0 : raise BaseError(705) # SQL执行错误
 
         #2.数据更新到Redis
-        self.redisDelete(self.table,code)
+        self.redisDelete(self.table,ids)
         return rw
 
     # 数据库中的广告视图与Redis进行同步
@@ -390,7 +458,8 @@ class product(object) :
         sortName     = param['sortName']
         sortValue    = param['sortValue']
         searchString = param['searchString']
-        p_status     = param['p_status']       
+        p_status     = param['p_status']
+        user         = param['user']
 
         str_Order_by='';
         str_where='';
@@ -425,11 +494,11 @@ class product(object) :
             where["name"]="{{ like '%"+searchString+"%'}}"
             
         conditions = {
-            'select' : ("pid,code,categoryCode,name,{{CONCAT('"+config.imageConfig['product.small']['url']+"/'}},{{imageSmall) as imageSmall}},"
-                        "starttime,endTime,statusCode,status,totalTopic,totalFollow,totalSold,totalAmount,p_status_code,p_status,supplierName,nickname"), 
+            'select' : ('pid,code,categoryCode,name,{{CONCAT("'+config.imageConfig['product.small']['url']+'/"}},{{imageSmall) as imageSmall}},'
+                        'starttime,endTime,statusCode,status,totalTopic,totalFollow,totalSold,totalAmount,p_status_code,p_status,supplierName,nickname'), 
             'limit'  : '%s,%s' % (offset,rowcount)
         }
-        if str_where    : conditions['where']='1 and 1 '+str_where+'and createUserid=%s' % (user,)
+        if str_where    : conditions['where']='1 and 1 '+('and '+str_where) if len(str_where)>0 else '' +' and createUserid="%s"' % (user,)
         if str_Order_by : conditions['order']=str_Order_by
         
 

@@ -1,16 +1,16 @@
-预售平台核心URI V0.6.09
+# 预售平台核心URI V0.6.09
 ==============================
 
-# 最后一次更新时间：2014.11.28
+ 最后一次更新时间：2014.12.02
 
-1. 概述(略)
-2. 开发环境说明
-2.1 Mysql 环境说明:
+## 1. 概述(略)
+## 2. 开发环境说明
+* 2.1 Mysql 环境说明:
     ip/port: 192.168.1.210:3306
     数据库名：o2b
     开发用账号：root/123456
 
-2.2 Redis 说明：
+* 2.2 Redis 说明：
     ip/prot: 192.168.1.210:6375
     数据库：
     select 08 : 产品库
@@ -19,13 +19,13 @@
     select 12 : 用户库
     密码：jct2014redis
 
-2.3 Key & Secret 说明
+* 2.3 Key & Secret 说明
     App_Key=fb98ab9159f51fd0
     App_Secret=09f7c8cba635f7616bc131b0d8e25947
     app_key放置在每一个http请求的header（app_key）中，每一个URI必须要验证app_key的合法性；
     app_secret只用于登录验证，放在登录请求的header(app_secret)中。
 
-3. 错误码说明 (持续更新中...)
+## 3. 错误码说明 (持续更新中...)
    错误码用于URI的错误信息返回，其中code是业务层级的定议，status为http对应的status,message是错误说明，help_document是错误说明指引URI
    其中：
    code = 600-699 -->  鉴权类错误
@@ -141,11 +141,12 @@ errorDic={
 }
 
 
-4. URI说明
-4.1 认证
-4.1.1 注册
+## 4. URI说明
+### 4.1 认证
 
-4.1.2 登录认证
+* 4.1.1 注册
+
+* 4.1.2 登录认证
 URI: https://192.168.1.210/o2b/v1.0.0/login/$url/$dataPacket
 输入：
       http header：app_secret
@@ -222,8 +223,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
   https://192.168.1.210/o2b/v1.0.0/product?o=0&r=20&q=睡眠+灯
 
 4.2.3. 获得产品详细信息
-   URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
-   
+   URI: https://192.168.1.210/o2b/v1.0.0/product/$code
    输出：
               {
                  'basic' : {
@@ -244,9 +244,14 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
 		    'limit'         : '限额数（最大可预售数）',
 		    'totalAmount'   : '累计金额（交易额）',
 		    'code'          : '产品编码',
-		    'pid'           : '产品ID'
+		    'pid'           : '产品ID',
+		    'batchNo'       : '批次号',
+		    'specification' : '规格',
+		    'categoryCode'  : '产品类型编码',
+		    'category'      : '产品类型名称'
                  },
                  'html' : {
+		     'id'          : '详情id',
 		     'description' : '产品详细描述',
 		     'html'        : '产品详细信息html'
 		 }
@@ -336,7 +341,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
   输入：
     方法:GET
     参数：
-    pms = attribute
+    pms=attribute
   输出：
         {
                  "status": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
@@ -370,7 +375,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/product
      方法:put
      修改参数：
      {
-       "c"    : '产品编号',                                    [可选]
+       "c"    : '产品编号',                                    
        "bn"   : '批次',                                        [可选]
        "name" ： '产品名称',                                    [可选]
        "spec" ： '产品规格',                                    [可选]
@@ -398,13 +403,14 @@ http status : 204 操作成功，无返回
 
 
 4.2.10 产品详细信息修改
-URI: https://192.168.1.210/o2b/v1.0.0/product/$id
+URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
 输入：
      方法:put
      修改参数：
      {
-       "code"        : '产品编号',                            [可选]
-       "d_desc"      : '产品详细描述',                            [可选]
+       "id"          : '产品详情ID',
+       "code"        : '产品CODE',
+       "desc"        : '产品详细描述',                            [可选]
        "html"        : '产品详细信息html'，                       [可选]
        "imgFiles"    : '更改产品详细信息HTML中的新增图片列表'|Null', [可选]
        "rImgFiles"   : '更改后需要删除的图片'                      [可选]
@@ -412,15 +418,17 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$id
      }
 输出：
 http status : 204 操作成功，无返回
+注： $pid 是产品ID
 
 
 
-4.2.11 产品发布/审核未通过/暂停/停止状态设置
+4.2.11 审核未通过/暂停/停止状态设置
 URI: https://192.168.1.210/o2b/v1.0.0/product/$id
 输入：
      方法:patch
      查询参数：
      {
+        
         "st"  : "OK|NOOK|PASUE|STOP|OFFLINE",     [WAIT-等待审核 NOOK-审核未通过 OK-发布  PASUE-暂停 STOP-停止  OFFLINE-下线]
 	"cm"  : "变更原由"
      }
@@ -428,14 +436,26 @@ URI: https://192.168.1.210/o2b/v1.0.0/product/$id
 http status : 204 操作成功，无返回
 
 
-4.2.12 删除产品
+4.2.12 对下线产品的再发布
+URI: https://192.168.1.210/o2b/v1.0.0/product/$id
+输入：
+     方法:patch
+     查询参数：
+     {
+         "bn"  : "产品批次号"
+     }
+输出：
+http status : 204 操作成功，无返回
+
+
+4.2.13 删除产品
 URI: https://192.168.1.210/o2b/v1.0.0/product/$pid
 方法:delete
 输入：无
 输出：
 http status : 204 操作成功，无返回
 
-4.2.13 批量删除产品
+4.2.14 批量删除产品
 URI: https://192.168.1.210/o2b/v1.0.0/product
 方法:delete
 输入：

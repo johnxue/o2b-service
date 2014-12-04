@@ -31,7 +31,8 @@ class Handler(WebRequestHandler):
             param['sortName']     = self.get_argument("s",default='')
             param['sortValue']    = self.get_argument("v",default='')
             param['searchString'] = self.get_argument("q",default='')
-            param['p_status']     = self.get_argument("mt",default='')            
+            param['p_status']     = self.get_argument("mt",default='')
+            param['user']         = user
             
             rows=p.getManageAllList(param,db)
             self.closeDB()            
@@ -160,6 +161,7 @@ class Handler(WebRequestHandler):
                 
         except BaseError as e:
             self.gotoErrorPage(e.code)
+    
             
             
     # 批量删除产品
