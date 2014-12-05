@@ -142,7 +142,13 @@ errorDic={
             "status"        : 400,
             "message"       : "插入数据失败!(redis)",
             "help_document" : "/o2b/v1.0.0/help/823"
-        },        
+        }, 
+        831 : {
+            "code"          : "831",
+            "status"        : 400,
+            "message"       : "短信网关通信失败！",
+            "help_document" : "/o2b/v1.0.0/help/831"
+        },
         890 : {
             "code"          : "890",
             "status"        : 400,

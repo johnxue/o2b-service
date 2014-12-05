@@ -3,9 +3,42 @@ import os
 App_Key    = 'fb98ab9159f51fd0'
 App_Secret = '09f7c8cba635f7616bc131b0d8e25947s'
 
+# www.sms.com SMS API
+www_sms_com_API = {
+    'vender'    : 'sms.com',
+    'url'       : 'http://api.sms.cn/mtutf8/',
+    'method'    : 'GET',
+    'arguments' : {
+        'uid'       : 'jetcloudtech',
+        'pwd'       : '2cb1097237d74363f70db9c55cb36fc9',  # pwd=md5('Admin2013jetcloudtech') 即md5(密码+用户名)
+        'mobile'    : '',
+        'content'   : ''
+    },
+    'status': {
+        '100' : '发送成功',
+        '101' : '验证失败',
+        '102' : '短信不足',
+        '103' : '操作失败',
+        '104' : '非法字符',
+        '105' : '内容过多',
+        '106' : '号码过多',
+        '107' : '频率过快',
+        '108' : '号码内容空',
+        '109' : '账号冻结',
+        '110' : '禁止频繁单条发送',
+        '112' : '号码不正确',
+        '120' : '系统升级'
+    }
+}
+
+SMSConfig={
+    'api'          : www_sms_com_API,
+    'verification' : '【智穿戴】检验码：%s（10分钟内有效），感谢您的注册。'
+}
+
 # pool_size 最大32
 DbConfig = {
-  'pool_name'         : "dbpool",
+  'pool_name'         : 'dbpool',
   'pool_size'         : 16,
   'user'              : 'root',
   'password'          : '123456',

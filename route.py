@@ -4,40 +4,25 @@ import easyOAuth.login
 import easyOAuth.logout
 import easyOAuth.heartbeat
 
-import Product.attribute
-import Product.list
-import Product.detail
-import Product.follow
-import Product.manage
-
 import Address.list
 import Address.userAddress
-
-import AdSense
-from AdSense import attribute,list,manage
-
-import News
-from News import list,detail
-
 import ShoppingCart.list
 
-from Order import attribute,list,detail
-#import Order.list
-#import Order.detail
-#import Order.attribute
 
-import Order.Returns.list
-
-
-
-import User,Group,Service,Message
+import User,Group,Service,Message,Product,Order,Supplier,News,AdSense
 
 from User         import list,detail,follow,changePassword
 from Message      import list,detail,sniffing,send
 from Group        import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
 from Group.Topics import list,detail,commentDetail,commentReply
 from Service      import uploadfile,RichEditor
+from Supplier     import list
+from Order        import attribute,list,detail
+from News         import list,detail
+from AdSense      import attribute,list,manage
+from Product      import attribute,list,detail,follow,manage
 
+import Order.Returns.list
 import ApiLib.list
 
 
@@ -75,7 +60,10 @@ handlers = [
             
             (r"/o2b/v1.0.0/my/product", Product.manage.Handler),
             
-    
+            #供应商
+            (r"/o2b/v1.0.0/supplier", Supplier.list.Handler),
+            
+
             #购物车管理
             (r"/o2b/v1.0.0/shoppingcart", ShoppingCart.list.info),
     

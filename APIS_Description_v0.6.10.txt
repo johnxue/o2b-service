@@ -1,7 +1,7 @@
-# 预售平台核心URI V0.6.09
+# 预售平台核心URI V0.6.10
 ==============================
 
- 最后一次更新时间：2014.12.02
+ 最后一次更新时间：2014.12.05
 
 ## 1. 概述(略)
 ## 2. 开发环境说明
@@ -1908,9 +1908,28 @@ URI: https://192.168.1.210/o2b/v1.0.0/message
 
 
 
-4.12 系统服务
+4.12 供应商管理
+4.12.1 供应商代码列表
+URI: https://192.168.1.210/o2b/v1.0.0/supplier
+输入：
+     http header：Authorization
+     方法:get
+     参数:无
+输出： 
+     http status : 200
+     数据：
+     {
+       'supplier' : {
+           'struct' : 'id,code,companyName,pinyin',
+	   'list'   : [[id,code,companyName,pinyin],...,[id,code,companyName,pinyin]]
+        }
+      }
 
-4.12.1 文件上传
+ 
+
+4.13 系统服务
+
+4.13.1 文件上传
 URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
 输入：
      http header：Authorization
@@ -1939,6 +1958,21 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/uploadfile
     order_id 订单id  : 当类型为 order.returns 有效
     groupid  圈子id  : 当类型为 group时有效		  
     
+
+4.13.2 发送短信
+URI: https://192.168.1.210/o2b/v1.0.0/service/sms
+输入：
+     http header：Authorization
+     方法:post
+     参数:
+     {
+	'm' : '校验后的手机号码，多号码之间用,号分隔',
+	'c' : '短信内容'，
+	't' : 'VER，短信类型'
+     }
+     注： VER=校验码
+输出：http status : 204 操作成功，无返回
+
 
 
 5. API 说明
