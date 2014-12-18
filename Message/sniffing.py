@@ -13,7 +13,7 @@ class Handler(WebRequestHandler):
     @tornado.gen.coroutine    
     def get(self):
         countInfo = yield self.callback_toSniffing()
-        self.response(countInfo)
+        self.response(countInfo,async=True)
         
     @run_on_executor
     def callback_toSniffing(self):

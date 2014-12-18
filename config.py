@@ -3,17 +3,43 @@ import os
 App_Key    = 'fb98ab9159f51fd0'
 App_Secret = '09f7c8cba635f7616bc131b0d8e25947s'
 
+smtp_163_server = {
+    'smtp.server' : 'smtp.163.com',
+    'username'    : 'jct_sender',
+    'password'    : 'jct_sender2013'
+}
+
+smtp_qq_server ={
+    'smtp.server' : '',
+    'username'    : '',
+    'password'    : ''    
+}
+
+EmailConfig={
+    'server'  : smtp_163_server,
+    'fromAdd' : 'jct_sender@163.com',
+    'logo'    : '/image/logo.jpg',
+    'content_verification' : '',
+    'subject_verification' : '智戴网注册确认邮件',
+}
+
 # www.sms.com SMS API
 www_sms_com_API = {
     'vender'    : 'sms.com',
     'url'       : 'http://api.sms.cn/mtutf8/',
     'method'    : 'GET',
-    'arguments' : {
+    'arguments_Record' : {   # 已备案账号
         'uid'       : 'jetcloudtech',
         'pwd'       : '2cb1097237d74363f70db9c55cb36fc9',  # pwd=md5('Admin2013jetcloudtech') 即md5(密码+用户名)
         'mobile'    : '',
         'content'   : ''
     },
+    'arguments' : {
+            'uid'       : 'jctadmin',   #未备案账号
+            'pwd'       : 'a4659ff67fd595fbdb59b7e9f16af830',  # pwd=md5('Admin2014jctadmin') 即md5(密码+用户名)
+            'mobile'    : '',
+            'content'   : ''
+    },    
     'status': {
         '100' : '发送成功',
         '101' : '验证失败',
@@ -33,7 +59,9 @@ www_sms_com_API = {
 
 SMSConfig={
     'api'          : www_sms_com_API,
-    'verification' : '【智穿戴】检验码：%s（10分钟内有效），感谢您的注册。'
+    'verification' : '您的验证码是%s。请在页面中提交验证码完成验证。【优安鲜品】'
+    #'verification' : '检验码：%s，检验码仅限本人使用，请勿泄漏，感谢您的注册。【智穿戴】'
+    #'verification' : '检验码：%s，检验码仅限本人使用，请勿泄漏，感谢您的注册。【智悲德育】'
 }
 
 # pool_size 最大32

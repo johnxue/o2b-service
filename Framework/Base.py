@@ -48,7 +48,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
         self.set_header('Access-Control-Allow-Headers', 'app-key,app-secret,authorization,Content-type,X_Requested_With')
     
     
-    def response(self,data=None,status=200,angluar=True,callback=None):
+    def response(self,data=None,status=200,angluar=True,callback=None,async=False):
 
         if status==200 : # 自动识别状态码
             callfun=inspect.stack()[1][3]
@@ -70,15 +70,19 @@ class WebRequestHandler(tornado.web.RequestHandler):
             else :
                 self.set_header("Content-Type", "application/json; charset=UTF-8")
                 self.write(strJson)
-        self.finish()
+        if (not async) or (data is None) : self.finish()
         
     def getRequestHeader(self,header):
         return self.request.headers.get(header)
         
-    def __init(self):
+    def __init(self,userAuth=True):
         self._db_=None
         self.checkAppKey()
-        self.objUserInfo=self.getUserToObjct()
+        
+        self.objUserInfo=None
+        
+        if userAuth :
+            self.objUserInfo=self.getUserToObjct()
         self._now_time_ = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def head(self,*args,**kwargs):
@@ -99,7 +103,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def patch(self,*args,**kwargs):
         self.__init()        
         
-    def gotoErrorPage(self,error_code,help=False) :
+    def gotoErrorPage(self,error_code,error_string='',help=False) :
         #在错误处理中如果数据库连接是打开发，应回滚并关闭,回滚前须提交的数据必须提交
         try :
             if self._db_ is not None :
@@ -112,6 +116,10 @@ class WebRequestHandler(tornado.web.RequestHandler):
             error=errorDic[eid]
         except:
             error=errorDic[900]
+        
+        # 如果存在自定义的错误消息者，替换原消息体
+        if error_string!='' :
+            error['message']=error_string
             
         if help is False :
             try :

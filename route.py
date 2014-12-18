@@ -15,18 +15,18 @@ from User         import list,detail,follow,changePassword
 from Message      import list,detail,sniffing,send
 from Group        import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
 from Group.Topics import list,detail,commentDetail,commentReply
-from Service      import uploadfile,RichEditor
 from Supplier     import list
 from Order        import attribute,list,detail
 from News         import list,detail
 from AdSense      import attribute,list,manage
 from Product      import attribute,list,detail,follow,manage
+from Service      import uploadfile,RichEditor,SMS,Email
+
 
 import Order.Returns.list
 import ApiLib.list
 
-
-handlers = [
+handlers = [ 
             # 新闻
             (r"/o2b/v1.0.0/news", News.list.info),
             (r"/o2b/v1.0.0/news/([0-9]+)", News.detail.info),
@@ -100,7 +100,6 @@ handlers = [
             (r"/o2b/v1.0.0/message", Message.list.Handler),
             (r"/o2b/v1.0.0/message/(.*)", Message.detail.Handler),
             
-            
             #广告
             (r"/o2b/v1.0.0/adSense/(.*)/([0-9]+)", AdSense.list.info),
             (r"/o2b/v1.0.0/adSense/attribute", AdSense.attribute.info),
@@ -110,11 +109,11 @@ handlers = [
             #服务
             (r"/o2b/v1.0.0/service/uploadfile", Service.uploadfile.Handler),
             (r"/o2b/v1.0.0/service/EditHtml", Service.RichEditor.Handler),
-            
+            (r"/o2b/v1.0.0/service/sms", Service.SMS.Handler),
+            (r"/o2b/v1.0.0/service/email", Service.Email.Handler),
             
             #其它
             (r"/o2b/v1.0.0/apis", ApiLib.list.Handler),
             (r".*", Framework.Base.Base404Handler),
-            
 
         ]

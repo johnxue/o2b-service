@@ -149,6 +149,12 @@ errorDic={
             "message"       : "短信网关通信失败！",
             "help_document" : "/o2b/v1.0.0/help/831"
         },
+        832 : {
+            "code"          : "832",
+            "status"        : 400,
+            "message"       : "短信网关API回传错误！",
+            "help_document" : "/o2b/v1.0.0/help/832"
+        },        
         890 : {
             "code"          : "890",
             "status"        : 400,

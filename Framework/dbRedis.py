@@ -112,8 +112,7 @@ class RedisCache(object):
             
             -- 新增或更改记录
             redis.call("HMSET", key,unpack(tab))
-            return id+0
-
+            return id
         '''
         ls=self._connection.register_script(luaScript)
         r=ls(keys=[table,id,config.TableToRedisNo[table]],args=[ujson.dumps(data)])

@@ -93,9 +93,7 @@ class info(WebRequestHandler):
             try :
                 data={
                     'code'          : objData['c'],
-                    'batchNo'       : objData['bn'],
                     'name'          : objData['name'],
-                    'specification' : objData['spec'],
                     'description'   : objData['desc'],
                     'Image'         : objData['img'],
                     'imagelarge'    : objData['imgl'],
@@ -103,7 +101,7 @@ class info(WebRequestHandler):
                     'imageSmall'    : objData['imgs'],
                     'supplierCode'  : objData['sc'],
                     'categoryCode'  : objData['cat'],
-                    'statusCode'    : objData['st'],
+                    #'statusCode'    : objData['st'],
                     'startTime'     : objData['stm'],
                     'endTime'       : objData['etm'],
                     'currentPrice'  : objData['cp'],
@@ -116,6 +114,17 @@ class info(WebRequestHandler):
                 }
             except :
                 raise BaseError(801) # 参数错误
+            
+            try :
+                data['batchNo'] = objData['bn']
+            except :
+                pass
+            
+            try :
+                data['specification'] = objData['spec']
+            except :
+                pass            
+                                    
             
             data['isOffline'] = 'N' #是否下线
             data['isDelete']  = 'N'  #是否删除

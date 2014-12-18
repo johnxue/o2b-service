@@ -12,7 +12,6 @@ class Handler(WebRequestHandler):
             
             s=entity.supplier()
             db=self.openDB()
-            
             rowData=s.getSupplierCodeList(db)
             self.closeDB()
             self.response(rowData)

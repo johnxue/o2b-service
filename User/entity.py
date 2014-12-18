@@ -1,30 +1,29 @@
 from Framework import dbRedis,dbMysql
+from Service import Random
 import msgpack,ujson
 
 class user(object) :
     
     def __init__(self) :
-        self.rcon=dbRedis.RedisCache()._connection
+        self.rds=dbRedis.RedisCache()
+        self.rds_conn=self.rds._connection
+        
         #self.db =dbMysql.Mysql()
         self.SelectScript='redis.call("SELECT","12")'
 
-    def add(self,data,commit=True):
+    def add(self,data,db,commit=True):
         #1.加入到数据库
-        db =dbMysql.Mysql()
         id=db.insert('tbUser',data,commit)
-        db.close()
         if id<1 : raise BaseError(703) # SQL执行错误
         
         #2.加入到Redis
-        rid=self.rds.save('tbUser',data,id=data['user'])
-        if rid['result']<1 : raise BaseError(823) # redis 执行错误
+        rid=self.rds.save('tbUser',data,data['user'])
+        if rid['result'] is None : raise BaseError(823) # redis 执行错误
         return id
     
-    def update(self,data,user,isCommit=True,isLock=True):
+    def update(self,data,user,db,isCommit=True,isLock=True):
         #1.数据更新到数据库
-        db =dbMysql.Mysql()
         rw=db.updateByPk('tbUser',data,user,pk='user',commit=isCommit,lock=islock)    
-        db.close()
         
         if id<0 : raise BaseError(705) # SQL执行错误
 
@@ -32,13 +31,11 @@ class user(object) :
         self.rds.save('tbUser',data,id=user)
         return rw
     
-    def delete(self,data,id,isCommit=True,isLock=True):
+    def delete(self,data,id,db,isCommit=True,isLock=True):
         #1.数据更新到数据库
-        db =dbMysql.Mysql()
         rw=db.updateByPk('tbUser',
                          {'isDelete':'Y','updateTime':'{{now()}}'},
                          user,pk='user',commit=isCommit,lock=islock) 
-        db.close()
         if id<0 : raise BaseError(705) # SQL执行错误
 
         #2.数据更新到Redis
@@ -64,10 +61,23 @@ class user(object) :
             end
             return cmsgpack.pack(t)
         '''
-        ls=self.rcon.register_script(luaScript)
+        ls=self.rds_conn.register_script(luaScript)
         info=ls(keys=[token])
         if info is None :
             info=None
         else : 
             info=msgpack.unpackb(info,encoding='utf-8')
         return info
+
+    def exists(self,username) :
+        luaScript=self.SelectScript+'''
+            local key = 'tbUser:'..KEYS[1]
+            local r=redis.call("EXISTS",key)
+            return r
+        '''
+        ls=self.rds_conn.register_script(luaScript)
+        r=ls(keys=[username])
+        return r
+    
+
+    
