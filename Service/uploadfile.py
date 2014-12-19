@@ -175,6 +175,12 @@ class uploadfile(object):
             #关闭临时文件，关闭后临时文件自动删除
             tmp_file.close()
             
+            # 如果是传的中等图片会自动生成一张80×80的小图
+            if attribution=='product.medium' :
+                new_img = im.resize((80, 80), Image.BILINEAR)
+                small_name=tmp_name.replace('-medium.','-small.')
+                new_img.save(temp_path+'/'+small_name)              
+            
             # 替换临时URL中的时间表示 
             if '{yyyy}{mm}{dd}' in temp_url :
                 temp_url=temp_url.replace("{yyyy}{mm}{dd}",time.strftime("%Y%m%d",time.localtime()))

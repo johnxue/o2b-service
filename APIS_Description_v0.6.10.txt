@@ -1,7 +1,7 @@
 # 预售平台核心URI V0.6.10
 ==============================
 
- 最后一次更新时间：2014.12.05
+ 最后一次更新时间：2014.12.18
 
 ## 1. 概述(略)
 ## 2. 开发环境说明
@@ -1746,7 +1746,50 @@ URI: https://192.168.1.210/o2b/v1.0.0/group/$gid/topics
 输出：http status : 204 操作成功，无返回
 
 4.10 用户
-4.10.1 查看用户信息
+
+4.10.1 增加一个用户
+URI: https://192.168.1.210/o2b/v1.0.0/user
+输入：
+     http header：Authorization
+     方法:post
+参数:
+     {
+         'u' : '电子邮箱',
+	 'p' : '密码',
+	 'n' : '昵称',
+	 'm' : '手机号' [可选]
+     }
+输出：
+{
+  'id' : 'tbUser表中的id'
+}
+
+4.10.2 检查一个用户是否存在（邮件方式）
+URI: https://192.168.1.210/o2b/v1.0.0/user
+输入：
+     http header：Authorization
+     方法:get
+参数:
+   u='电子邮件地址'
+输出：
+'Y'|'N'
+
+注：用户存在返回 'Y' ,否则返回 'N'
+
+
+4.10.3 检查一个用户是否存在（昵称方式）
+URI: https://192.168.1.210/o2b/v1.0.0/user
+输入：
+     http header：Authorization
+     方法:get
+参数:
+   n='用户昵称'
+输出：
+'Y'|'N'
+注：用户存在返回 'Y' ,否则返回 'N'
+
+
+4.10.4 查看用户信息
 URI: https://192.168.1.210/o2b/v1.0.0/user/$id/info
 输入：
      http header：Authorization
@@ -1760,7 +1803,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/$id/info
      }
 
 
-4.10.2 上传用户头像
+4.10.5 上传用户头像
 URI: https://192.168.1.210/o2b/v1.0.0/user/header
 输入：
      http header：Authorization
@@ -1776,7 +1819,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/header
 }
 
 
-4.10.3 用户变更密码
+4.10.6 用户变更密码
 URI: https://192.168.1.210/o2b/v1.0.0/user/info/pmssmed
 输入：
      http header：Authorization
@@ -1789,10 +1832,10 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/info/pmssmed
 输出： http status : 204
 
 
-4.10.4 绑定手机
+4.10.7 绑定手机
 
 
-4.10.5. （我的关注 - 产品）列出用户的所有关注产品
+4.10.8. （我的关注 - 产品）列出用户的所有关注产品
 URI: https://192.168.1.210/o2b/v1.0.0/user/product/follow
 输入：
      http header：Authorization
@@ -1803,6 +1846,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/product/follow
  product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
                             $totalTopic,$totalFollow,$totalSold,$totalAmount)],...]
 }
+
 
 
 4.11 消息

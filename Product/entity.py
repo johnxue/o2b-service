@@ -3,6 +3,7 @@ from Framework.baseException import errorDic,BaseError
 import msgpack,ujson,datetime
 import config
 from Service import uploadfile
+import re
 
 
 
@@ -144,11 +145,20 @@ class product(object) :
         
         #1. 将临时图像文件移动到正式文件夹中,并更替原有data里的图片文件名为正式文件名
         try :
-            # 针对新增产品详细信息中的图片
+            # 针对新增产品详细信息中的图片,如果有中图没有小图，则加入小图
+            if ('-small.' not in data['imgFiles']) and ('-medium.' in data['imgFiles']) :
+                res=re.findall(r'product.*-medium.{4}',data['imgFiles'])
+                data['imgFiles']+=','+res.replace('-medium.','-small.')
             imgFiles=data['imgFiles']
         except:
-            # 针对新增产品图片
+            # 针对新增产品图片,如果有中图没有小图，则加入小图
+            try :
+                if data['imageSmall'] : pass
+            except:
+                #res=re.findall(r'product.*-medium.{4}',data['Image'])
+                data['imageSmall']=data['Image'].replace('-medium.','-small.')
             imgFiles=data['Image']+','+data['imagelarge']+','+data['imageBanners']+','+data['imageSmall']
+                
             
         oHuf=uploadfile.uploadfile()
         # preImagesAndHtml 返回 {'files' : '含正式路径的文件名','content':'含正式URL的内容'}

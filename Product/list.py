@@ -98,7 +98,7 @@ class info(WebRequestHandler):
                     'Image'         : objData['img'],
                     'imagelarge'    : objData['imgl'],
                     'imageBanners'  : objData['imgb'],
-                    'imageSmall'    : objData['imgs'],
+                    #'imageSmall'    : objData['imgs'],
                     'supplierCode'  : objData['sc'],
                     'categoryCode'  : objData['cat'],
                     #'statusCode'    : objData['st'],

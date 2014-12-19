@@ -3,6 +3,8 @@ import os
 App_Key    = 'fb98ab9159f51fd0'
 App_Secret = '09f7c8cba635f7616bc131b0d8e25947s'
 
+Default_Header='header_boy.jpg'
+
 smtp_163_server = {
     'smtp.server' : 'smtp.163.com',
     'username'    : 'jct_sender',
