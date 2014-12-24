@@ -8,7 +8,7 @@
     "imageCompressEnable":false, /* 是否压缩图片,默认是true */
     "imageCompressBorder":1600, /* 图片压缩最长边限制 */
     "imageInsertAlign":"none", /* 插入的图片浮动方式 */
-    "imageUrlPrefix":"http://192.168.1.210", /* 图片访问路径前缀 */
+    "imageUrlPrefix":"http://192.168.1.110", /* 图片访问路径前缀 */
     "imagePathFormat":"/images/tmp/{yyyy}{mm}{dd}/{filename}",
 
     /* 涂鸦图片上传配置项 */

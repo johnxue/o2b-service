@@ -21,14 +21,19 @@ class info(WebRequestHandler):
             str_Order_by='';
             str_where='';
         
+            #where 用于统计
+            where={ "{{1}}" : "1" }
+        
             if sortName == 'sort':
                 str_Order_by='`%s` desc' % (sortValue)
         
             if sortName=='attribute' and sortValue!="ALL" :
                 str_where='`statusCode`="%s"' % (sortValue)
+                where['statusCode']=sortValue
             
             if sortName=='category' and sortValue!="0000" :
-                str_where='`categoryCode`="%s"' % (sortValue) 
+                str_where='`categoryCode`="%s"' % (sortValue)
+                where['categoryCode']=sortValue
         
             sw=''
             if len(searchString)>0 :
@@ -37,7 +42,7 @@ class info(WebRequestHandler):
                 
                 searchString='%'+searchString.replace(' ','%')+'%'
                 str_where=' %s `name` like "%s"' % (sw,searchString)
-                 
+                where["name"]="{{ like '%"+searchString+"' or "+sw+" 1 }}"
             
             db=self.openDB()
 
@@ -52,6 +57,9 @@ class info(WebRequestHandler):
             if str_where    : conditions['where']=str_where
             if str_Order_by : conditions['order']=str_Order_by
             
+            intCountComment=db.count('vwProductList',where)
+            if intCountComment==0 : raise BaseError(802) # 没有找到数据                   
+            
             rows_list = db.getAllToList('vwProductList',conditions)  # 查询结果以List的方式返回  
             
             self.closeDB()
@@ -64,7 +72,8 @@ class info(WebRequestHandler):
             rows = {
                 'struct':'pid,code,categoryCode,name,image,starttime,endTime,statusCode,status,'
                           'totalTopic,totalFollow,totalSold,totalAmount',             
-                'rows' : rows_list
+                'rows' : rows_list,
+                'count' : intCountComment
             }
             self.response(rows)
                         
