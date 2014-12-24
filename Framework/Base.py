@@ -75,21 +75,24 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def getRequestHeader(self,header):
         return self.request.headers.get(header)
         
-    def __init(self,userAuth=True):
+    def __init(self,*args,**kwargs):
         self._db_=None
         self.checkAppKey()
         
         self.objUserInfo=None
-        
-        if userAuth :
+        try :
+            if kwargs['userAuth'] :
+                self.objUserInfo=self.getUserToObjct()
+        except:
             self.objUserInfo=self.getUserToObjct()
+        
         self._now_time_ = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def head(self,*args,**kwargs):
         self.__init()        
         
     def get(self,*args,**kwargs):
-        self.__init()
+        self.__init(*args,**kwargs)
         
     def post(self,*args,**kwargs):
         self.__init()
