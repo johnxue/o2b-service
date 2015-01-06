@@ -187,7 +187,20 @@ class list(WebRequestHandler):
                 'updateTime':'{{now()}}',
                 'updateUser':user
             }
-            db.updateByPk('tbUser',updateData,user,pk='user')
+            
+            db.begin()
+            # 更改tbUser的addressId
+            db.updateByPk('tbUser',updateData,user,pk='user',commit=False)
+            
+            # 更改tbUserAddress的isDefault字段
+            updateData={
+                'isDefault': "{{ if(id=%s,'Y','N')}}" % (addressId,),
+                'updateTime':'{{now()}}',
+                'updateUser':user
+            }
+            
+            db.update('tbUserAddress',updateData,{'user':user},commit=False)
+            db.commit()
             
             self.closeDB()
 

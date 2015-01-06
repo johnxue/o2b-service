@@ -1,6 +1,6 @@
 from Framework import dbRedis,dbMysql
 from Service import Random
-import msgpack,ujson
+import msgpack,ujson,config
 
 class user(object) :
     
@@ -17,6 +17,7 @@ class user(object) :
             local id=KEYS[2]
             local table=KEYS[1]
             local key = table..':'..id
+            local nickname=''
             --local id  = 1  -- 如果是修改记录，则返回的值为1
             
             local value=cjson.decode(ARGV[1])
@@ -28,7 +29,7 @@ class user(object) :
                 tab[#tab + 1] = k
                 tab[#tab + 1] = v
                 if k=='nickname' then
-                   local nickname=v
+                   nickname=v
                 end
             end
             
@@ -61,7 +62,7 @@ class user(object) :
         
         #2.加入到Redis
         rid=self.saveToRedis('tbUser',data,data['user'])
-        if rid['result'] is None : raise BaseError(823) # redis 执行错误
+        if rid is None : raise BaseError(823) # redis 执行错误
         return id
     
     def update(self,data,user,db,isCommit=True,isLock=True):

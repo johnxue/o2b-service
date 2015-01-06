@@ -20,10 +20,10 @@
     密码：jct2014redis
 
 * 2.3 Key & Secret 说明
-    App_Key=fb98ab9159f51fd0
-    App_Secret=09f7c8cba635f7616bc131b0d8e25947
-    app_key放置在每一个http请求的header（app_key）中，每一个URI必须要验证app_key的合法性；
-    app_secret只用于登录验证，放在登录请求的header(app_secret)中。
+    App-Key=fb98ab9159f51fd0
+    App-Secret=09f7c8cba635f7616bc131b0d8e25947
+    app-key放置在每一个http请求的header（app_key）中，每一个URI必须要验证app_key的合法性；
+    app-secret只用于登录验证，放在登录请求的header(app_secret)中。
 
 ## 3. 错误码说明 (持续更新中...)
    错误码用于URI的错误信息返回，其中code是业务层级的定议，status为http对应的status,message是错误说明，help_document是错误说明指引URI

@@ -10,7 +10,7 @@ class info(WebRequestHandler):
             
             #1.1 查询付款方式；
             conditions = { 'select':'description,code,comment' , 'order':'sort desc'}
-            rows_Payment = db.getAllToList('tbPayment',conditions)              
+            rows_Payment = db.getAllToList('vwPayment',conditions)              
 
             #1.2. 查询配送方式；
             conditions = {'select':'description,code,comment' , 'order':'sort desc'}
