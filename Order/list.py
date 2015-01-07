@@ -229,34 +229,35 @@ class info(WebRequestHandler):
                 
                 if odId<0 :
                     raise BaseError(801) # SQL执行错误                    
-                    
-                #1.2 更改tbOrderList.orderNo
-                updateData={
-                    "orderNo" : "{{CONCAT(DATE_FORMAT(createTime,'%s'),LPAD(id,8,'0'))}}" % ('%Y%m%d')
-                }
+            # end for ----
+            
+            #1.2 更改tbOrderList.orderNo
+            updateData={
+                "orderNo" : "{{CONCAT(DATE_FORMAT(createTime,'%s'),LPAD(id,8,'0'))}}" % ('%Y%m%d')
+            }
+            
+            db.updateByPk('tbOrderList',updateData,orderId,commit=False)
+            
+
+            db.commit()
+            
+            row= db.getToObjectByPk('tbOrderList',{'select':'orderNo'},orderId)
+            self.closeDB()
                 
-                db.updateByPk('tbOrderList',updateData,orderId,commit=False)
-                
-    
-                db.commit()
-                
-                row= db.getToObjectByPk('tbOrderList',{'select':'orderNo'},orderId)
-                self.closeDB()
-                    
-                # 生成订单号
-                
-                #orderNo=orderDate[0].strftime("%Y%m%d")+"%08d"%orderId
-                
-                #3. 打包成json object
-                rows={
-                    "user"    : user,
-                    "orderId" : orderId,
-                    "amount"  : amount+freight,   # 含运费
-                    "payment" : payment,
-                    "orderNo" : row['orderNo']
-                }
-                
-                self.response(rows)
+            # 生成订单号
+            
+            #orderNo=orderDate[0].strftime("%Y%m%d")+"%08d"%orderId
+            
+            #3. 打包成json object
+            rows={
+                "user"    : user,
+                "orderId" : orderId,
+                "amount"  : amount+freight,   # 含运费
+                "payment" : payment,
+                "orderNo" : row['orderNo']
+            }
+            
+            self.response(rows)
                            
         except BaseError as e:
             self.gotoErrorPage(e.code)
