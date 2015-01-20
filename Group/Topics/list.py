@@ -69,7 +69,8 @@ class Handler(WebRequestHandler):
         try:
             super().post(self)
             #user=self.getTokenToUser()
-            objUser=self.getUserInfo()
+            #objUser=self.getUserInfo()
+            objUser=self.objUserInfo
             user=objUser['user']            
             objData=self.getRequestData()
             try:

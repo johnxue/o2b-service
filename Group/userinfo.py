@@ -24,7 +24,7 @@ class Handler(WebRequestHandler):
             
             #1. 查询用户加入的所有圈子，返回圈子gid
             conditions={
-                'select' : "gid,name,cat,owner,role,membership,totalTopic,{{CONCAT('%s/'}},{{header) as header}}" % (config.imageConfig['groupheader']['url']),
+                'select' : "gid,name,cat,owner,role,membership,totalTopic,{{CONCAT('%s/'}},{{header) as header}},status_code,status" % (config.imageConfig['groupheader']['url']),
                 'where'  : "user='%s'" % (user),
                 'limit' : '%s,%s' % (offset,rowcount)
             }

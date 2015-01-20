@@ -27,7 +27,7 @@ class info(WebRequestHandler):
             # 分页
             offset=int(self.get_argument("o",default=0))
             rowcount=int(self.get_argument("r",default=1000))
-            user=self.get_argument("s",default='')
+            user=self.get_argument("u",default='')
             gid=int(self.get_argument("g",default=0))
             
             offset=offset*rowcount
