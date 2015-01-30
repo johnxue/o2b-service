@@ -1,0 +1,2454 @@
+## 1. 概述(略)
+## 2. 开发环境说明
+* 2.1 Mysql 环境说明:
+    ip/port: 192.168.1.210:3306
+    数据库名：o2b
+    开发用账号：root/123456
+
+* 2.2 Redis 说明：
+    ip/prot: 192.168.1.210:6375
+    数据库：
+    select 08 : 产品库
+    select 09 : 广告库
+    select 10 : 消息库
+    select 12 : 用户库
+    密码：jct2014redis
+
+* 2.3 Key & Secret 说明
+    App-Key=fb98ab9159f51fd0
+    App-Secret=09f7c8cba635f7616bc131b0d8e25947
+    app-key放置在每一个http请求的header（app_key）中，每一个URI必须要验证app_key的合法性；
+    app-secret只用于登录验证，放在登录请求的header(app_secret)中。
+
+## 3. 错误码说明 (持续更新中...)
+   错误码用于URI的错误信息返回，其中code是业务层级的定议，status为http对应的status,message是错误说明，help_document是错误说明指引URI
+   其中：
+   code = 600-699 -->  鉴权类错误
+   code = 700-799 -->  数据库类错误
+   code = 800-899 -->  业务类错误
+   code = 900     -->  未被定义的错误类型
+
+   具体错误代码定义如下：
+```
+errorDic={
+        900 : {
+                "code": "900",
+                "status": 500,
+                "message": "未被定义的错误类型",
+                "help_document": "/oauth/v1.0.0/help/900"
+        },
+        601: {
+            "code": "601",
+            "status":401,
+            "message": "未经过JctOAuth授权的第三方应用",
+            "help_document": "/oauth/v1.0.0/help/601"
+        },
+        602: {
+            "code": "602",
+            "status":401,
+            "message": "未登录授权的应用",
+            "help_document": "/oauth/v1.0.0/help/602"
+        },
+        603: {
+            "code": "603",
+            "status":404,
+            "message": "无法识别的用户名或密码",
+            "help_document": "/oauth/v1.0.0/help/603"
+        },                  
+        701: {
+              "code": "701",
+              "status":500,
+              "message": "数据库连接失败",
+              "help_document": "/oauth/v1.0.0/help/701"
+        },
+        702: {
+                      "code": "702",
+                      "status":500,
+                      "message": "无法从链接池中获得数据库连接",
+                      "help_document": "/oauth/v1.0.0/help/702"
+        },        
+        703: {
+              "code": "703",
+              "status":500,
+              "message":"SQL 语句执行失败(I)",
+              "help_document":"/oauth/v1.0.0/help/703"
+        },
+        704: {
+              "code": "704",
+              "status":500,
+              "message":"SQL 语句执行失败(D)",
+              "help_document":"/oauth/v1.0.0/help/704"
+        },
+        705: {
+              "code": "705",
+              "status":500,
+              "message":"SQL 语句执行失败(U)",
+              "help_document":"/oauth/v1.0.0/help/705"
+        },
+        706: {
+              "code": "706",
+              "status":500,
+              "message":"SQL 语句执行失败(S)",
+              "help_document":"/oauth/v1.0.0/help/706"
+        },
+        707: {
+              "code": "707",
+              "status":500,
+              "message":"SQL 语句执行失败(C)",
+              "help_document":"/oauth/v1.0.0/help/707"
+        },
+        801: {
+              "code": "801",
+              "status":400,
+              "message":"参数列表错误",
+              "help_document":"/o2b/v1.0.0/help/801"
+        },
+        802 : {
+            "code": "802",
+            "status":404,
+            "message":"没有找到数据",
+            "help_document":"/o2b/v1.0.0/help/802"
+        },
+        811 : {
+            "code"          : "811",
+            "status"        : 400,
+            "message"       : "未知的图片格式（从文件后缀上判断）",
+            "help_document" : "/o2b/v1.0.0/help/811"
+        },
+        812 : {
+                    "code"          : "812",
+                    "status"        : 400,
+                    "message"       : "未知的图片格式",
+                    "help_document" : "/o2b/v1.0.0/help/811"
+        },        
+        813 : {
+            "code"          : "813",
+            "status"        : 400,
+            "message"       : "值得怀疑的图片(非法图片格式)",
+            "help_document" : "/o2b/v1.0.0/help/812"
+        },
+        814 : {
+            "code"          : "814",
+            "status"        : 400,
+            "message"       : "图片长宽超界",
+            "help_document" : "/o2b/v1.0.0/help/813"
+        }             
+}
+```
+
+## 4. URI说明
+### 4.1 认证
+
+* 4.1.1 注册
+
+* 4.1.2 登录认证
+`URI: `https://192.168.1.210/o2b/v1.0.0/login/$url/$dataPacket`   
+* `Http GET 方法`
+      http header：app_secret
+      url: 必填 - 即网站URL，从浏览器地址栏中获得
+      dataPacket:必填，通过加密算法获得
+* `Http 返回：`
+```
+http header：Authorization [token]
+{
+  登录后需要返回的信息，目前还没有想好
+}
+```
+* 4.1.3. 登录
+`URI: https://192.168.1.210/o2b/v1.0.0/logout`
+*注：$userid从Token中获得*
+* `Http Delete 方法`
+     http header：Authorization
+* `Http 返回：`
+```
+http status : 204 操作成功，无返回
+```
+
+
+
+####4.1.5 Token心跳
+`URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat`
+*注：$userid从Token中获* 
+
+* `Http Patch 方法`
+      http header：Authorization
+
+* ` Http 返回：`
+```
+http status : 201 操作成功
+返回:
+1800,即token时效秒数
+```
+
+-----
+###4.2 产品信息
+
+####4.2.1. 获得查询条件：
+    URI: `https://192.168.1.210/o2b/v1.0.0/product/attr
+    
+* 输出：
+```   
+{
+                 "attribute": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "sort"     : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+}
+```
+
+####4.2.2 获得产品列表
+  URI: `https://192.168.1.210/o2b/v1.0.0/product`
+  
+* 输入：
+  ```
+  o = 起始页                  [可选]
+  r = 每页行数                [可选]
+  s =attribute|category|sort  [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
+  v =排序条件                  [可选，取值根据 /o2b/v1.0.0/product/attribute json的value值]
+  q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
+  mt=产品管理状态              [可选，只用于后台管理用
+  ```
+* 返回： 
+```
+{ 
+ product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
+                            $totalTopic,$totalFollow,$totalSold,$totalAmount)],...]
+}
+```
+  >*例1： 输出所有产品列表（默认只显示前1000条记录）
+  https://192.168.1.210/o2b/v1.0.0/product
+
+ * 例2： 输出第2页，共50项产品列表 
+  https://192.168.1.210/o2b/v1.0.0/product?o=1&r=50
+
+  *例3： 输出最新上互产品，第1页，共20项产品列表,
+  https://192.168.1.210/o2b/v1.0.0/product?o=0&r=20&s=sort&v=updatetime
+
+  *例4： 查询所有与“睡眠”和“灯”有关的产品
+  https://192.168.1.210/o2b/v1.0.0/product?o=0&r=20&q=睡眠+灯
+
+####4.2.3. 获得产品详细信息
+   URI: `https://192.168.1.210/o2b/v1.0.0/product/$code`
+   
+* 返回：
+```
+{
+                 'basic' : {
+		    'name'          : '产品名称',
+		    'description'   : '产品描述',
+		    'image'         : '产品图片-中图',
+		    'imageBanners'  : '产品图片名称-广告条',
+		    'starttime'     : '开始时间' ,
+		    'endtime'       : '结束时间',
+		    'status'        : '状态 - tbProductStatus.code',
+		    'supplierCode'  : '供应商编码',
+		    'supplierName'  : '供应商名称',
+		    'currentPrice'  : '当前价格',
+		    'originalPrice' : '原价',
+		    'totalTopic'    : '统计话题数',
+		    'totalFollow'   : '统计关注数',
+		    'totalSold'     : '已销售数',
+		    'limit'         : '限额数（最大可预售数）',
+		    'totalAmount'   : '累计金额（交易额）',
+		    'code'          : '产品编码',
+		    'pid'           : '产品ID',
+		    'batchNo'       : '批次号',
+		    'specification' : '规格',
+		    'categoryCode'  : '产品类型编码',
+		    'category'      : '产品类型名称'
+                 },
+                 'html' : {
+		     'id'          : '详情id',
+		     'description' : '产品详细描述',
+		     'html'        : '产品详细信息html'
+}
+```
+####4.2.4 产品图片上传
+URI: `https://192.168.1.210/o2b/v1.0.0/product/images`
+
+* `Http Post方法`
+       http header：Authori
+
+* Post数据:
+```
+{
+        "type" : "图像归属类型",
+	"code" : "产品编码"
+}
+*限制 : 图片最大不能超过4M
+```
+* Post返回:
+```
+http status : 201
+ 
+{
+"url":"文件所在的路径",
+"filename": "文件名"
+}
+  
+实际输出文件名前面有:"tmp_"头，为临时文件，待文本信息正时提交后，自动去掉'tmp_'头成为正式文件
+```
+*注： type 图像归属类型 ： product.* | product.banner | product.large | product.medium | product.small
+          product.* 为不分产品类型时使用。
+    *code 产品编码，如果新建产品是，因无产品编码，此项填"000000(6个零）*
+   
+####4.2.5 加入新产品基本信息
+URI: `https://192.168.1.210/o2b/v1.0.0/product`
+
+* `Http Post 方法`
+* Post数据:
+```    
+{
+       "c"    : '产品编号',
+       "bn"   : '批次',
+       "name" ： '产品名称',
+       "spec" ： '产品规格',
+       "desc" ： '产品描述',
+       "img"  ： '产品图片-中图',
+       "imgl" ： '产品图片名称-大图',
+       "imgb" ： '产品图片名称-广告条',
+       "imgs" ： '产品图片名称-小图用于订单显示',
+       "sc"   ： '供应商编码',
+       "cat"  ： '类型编码 - tbProductType.code',
+       "st"   ： '状态编码 - tbProductStatus.code',
+       "stm"  ： '开始时间',
+       "etm"  ： '结束时间',
+       "cp"   ： '当前价格',
+       "op"   ： '原价',
+       "ta"   ： '累计金额（交易额）',
+       "tt"   : '统计话题数',
+       "tf"   : '统计关注数',
+       "ts"   : '已销售数',
+       "lmt"  : '限额数（最大预售数）',
+       "mode":"SYNC"  [可选，同步时，只有一个mode参数，其它参数不需要输入]
+}
+```   
+* Post 返回:
+```
+http status : 201 
+{
+  '产品编号' : pid （即，产品id）
+}
+```
+####4.2.6 加入产品详细信息
+URI: `https://192.168.1.210/o2b/v1.0.0/product/$pi`
+
+*  `Http Post方法`
+     http header：Authorization
+* `Post 数据:`
+```
+{
+       "code"     : '产品code',
+       "desc"     : '产品详细描述',
+       "html"     : '产品详细信息html'，
+       "imgFiles" : '产品详细信息的图片列表',
+       "sort"     : '产品详细信息的显示顺序，如果有多个的话' [可选]
+}
+```     
+*Post 返回：
+```
+{ "产品pid" : '产品详细信息id' }
+```     
+*注： imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+  如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+    通过百度编辑器控件上传时 type='product.detail'*
+
+
+
+####4.2.7 获得产品管理状态(产品管理)
+  URI: `https://192.168.1.210/o2b/v1.0.0/my/product`
+  
+* `Http GET 方法`
+    
+* `GET参数`
+    pms=attribute
+* GET 返回：
+```
+{
+                 "status": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+}  
+```  
+ 
+
+####4.2.8 获得我的产品列表(产品管理)
+  URI: `https://192.168.1.210/o2b/v1.0.0/my/product`
+  
+* `Http GET 方法`
+*  `GET参数：`
+```
+  o = 起始页                   [可选]
+  r = 每页行数                 [可选]
+  s =attribute|category|sort  [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
+  v =排序条件                  [可选，取值根据 /o2b/v1.0.0/product/attribute json的value值]
+  q =模糊查询条件              [可选，多查询关键字用 "+" 隔开]
+  mt=产品管理状态              [可选，只用于后台管理用]
+```  
+* GET返回：
+```
+{
+	      
+                 product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,
+		           $statusCode,$status,$totalTopic,$totalFollow,$totalSold,
+			   $totalAmount,$p_status_code,$p_status,$supplierName,$nickname)],...]
+}
+
+```
+####4.2.9 产品基本信息修改
+URI: `https://192.168.1.210/o2b/v1.0.0/product`
+
+* `put 方法`
+* `put数据：`
+```
+{
+       "c"    : '产品编号',                                    
+       "bn"   : '批次',                                        [可选]
+       "name" ： '产品名称',                                    [可选]
+       "spec" ： '产品规格',                                    [可选]
+       "desc" ： '产品描述',                                    [可选]
+       "img"  ： '产品图片-中图',                                [可选]
+       "imgl" ： '产品图片名称-大图',                             [可选]
+       "imgb" ： '产品图片名称-广告条',                           [可选]
+       "imgs" ： '产品图片名称-小图用于订单显示',                   [可选]
+       "sc"   ： '供应商编码',                                   [可选]
+       "cat"  ： '类型编码 - tbProductType.code',                [可选]
+       "st"   ： '状态编码 - tbProductStatus.code',              [可选]
+       "stm"  ： '开始时间',                                     [可选]
+       "etm"  ： '结束时间',                                     [可选]
+       "cp"   ： '当前价格',                                     [可选]
+       "op"   ： '原价',                                        [可选]
+       "ta"   ： '累计金额（交易额）',                             [可选]
+       "tt"   : '统计话题数',                                    [可选]
+       "tf"   : '统计关注数',                                    [可选]
+       "ts"   : '已销售数',                                      [可选]
+       "lmt"  : '限额数（最大预售数）'                             [可选]
+       
+}
+```     
+* put返回:
+```
+http status : 204 操作成功，无返回
+```
+
+####4.2.10 产品详细信息修改
+URI: `https://192.168.1.210/o2b/v1.0.0/product/$pid`
+
+* `Http put 方法`
+* `put数据：`
+```
+{
+       "id"          : '产品详情ID',
+       "code"        : '产品CODE',
+       "desc"        : '产品详细描述',                            [可选]
+       "html"        : '产品详细信息html'，                       [可选]
+       "imgFiles"    : '更改产品详细信息HTML中的新增图片列表'|Null', [可选]
+       "rImgFiles"   : '更改后需要删除的图片'                      [可选]
+       "sort"        : '产品详细信息的显示顺序，如果有多个的话'       [可选]       
+}
+```     
+* put返回:
+```
+http status : 204 操作成功，无返回
+```
+*注： $pid 是产品ID*
+
+
+
+####4.2.11 审核未通过/暂停/停止状态设置
+URI: `https://192.168.1.210/o2b/v1.0.0/product/$id`
+
+* `Http patch 方法`
+* `patch数据：`
+```
+{
+        
+        "st"  : "OK|NOOK|PASUE|STOP|OFFLINE",     [WAIT-等待审核 NOOK-审核未通过 OK-发布  PASUE-暂停 STOP-停止  OFFLINE-下线]
+	"cm"  : "变更原由"
+}
+```     
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+
+####4.2.12 对下线产品的再发布
+URI: `https://192.168.1.210/o2b/v1.0.0/product/$id`
+
+* `Http patch 方法`
+* `patch数据：`
+```
+{
+ "bn"  : "产品批次号"
+}
+```     
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+
+####4.2.13 删除产品
+URI:` https://192.168.1.210/o2b/v1.0.0/product/$pid`
+
+* `Http delete 方法`
+* 输入：无
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+####4.2.14 批量删除产品
+URI: `https://192.168.1.210/o2b/v1.0.0/product`
+
+* `Http delete 方法`
+* 输入：
+```
+{
+  "ids" :'pid1,pid2,...pidN'
+}
+```
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+
+###4.3 产品关注
+
+####4.3.1 用户关注产品
+URI: `https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow` 
+
+* `HTTP POST 方法`
+     http header：Authorization
+* `POST数据`
+      follow=$uid    [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+* POST返回：
+```
+    http status : 201
+{
+     'code': 'xxxx'
+     'follow': xxxx
+}
+```
+
+####4.3.2. 用户取消关注产品
+输入：`https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow`
+
+* `HTTP DELETE 方法`
+     http header：Authorization
+      
+* `delete数据:`
+     unfollow=$uid    [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+* delete返回：
+```
+     http status : 201
+{
+    'code': 'xxxx'   #产品编号
+    'follow': xxxx   #关注数
+}
+```     
+####4.3.3. 某一产品当前用户是否关注
+URI:` https://192.168.1.210/o2b/v1.0.0/product/$product_code/follow`
+
+* `HTTP GET 方法`
+     http header：Authorizat
+* `GET数据：`
+     $uid    [$uid，可以为空，如果$uid为空，后台处理$uid时将从Tok
+* GET返回：
+```
+http status : 200
+{
+    'code'  : 'xxxx'        #产品编号
+    'follow': xxxx          #关注数
+    '$user' : 'YES'|'NO'    #关注为YES,NO为未关注
+}
+```
+-----
+
+###4.4 购物车
+####4.4.1 得到某用户的购物车
+URI:` https://192.168.1.210/o2b/v1.0.0/shoppingcart`
+
+* `HTTP GET 方法`
+     http header：Authorization
+* `GET数据：`
+```
+{
+       user         : 'xxxxx',
+       shoppingcart : [ 
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline,$image],
+                        ...
+                        [$id,$pId,$pCode,$name,$OriginalPrice,$CurrentPrice,$number,$available,$offline,$image]
+                      ]
+}
+```  
+*注：这里传回来的image是小图，在产品名称中image=img+'-'+产品编码+'-'+[small|medium|large|banner]+'.jpg'*
+
+
+####4.4.2 加入购物车
+URI: `https://192.168.1.210/o2b/v1.0.0/shoppingcart`
+
+* `HTTP POST 方法`
+    http header：Authorizat
+
+* `post数据:`
+```
+{
+pid,pcode,number
+}
+```          
+* post返回：
+```
+{
+user: 'xxxxx',
+address : [ [list],[list]..[list] ]
+}
+
+```
+####4.4.3. 更改购物车数量
+URI:` https://192.168.1.210/o2b/v1.0.0/shoppingcart`
+
+* `Http patch 方法`
+     http header：Authorizati
+     patch json 对象:{id,number}
+*注： id     - 购物车id
+     number - 定购数量*
+
+>*  例： https://192.168.1.210/o2b/v1.0.0/shoppingcart
+     patch数据：
+     {
+       "id" : 18,
+       "number" : 1
+     }
+
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+####4.4.4. 删除购物车商品
+URI:` https://192.168.1.210/o2b/v1.0.0/shoppingcart`
+
+* `Http delete 方法`
+     http header：Authorization
+    
+* `delete数据：`
+     {
+	"ids":"$id1,$id2,$id3,....,$idn"
+     }
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+-----
+###4.5 订单
+####4.5.1 结算-生成定单
+URI:` https://192.168.1.210/o2b/v1.0.0/order`
+
+* `Http post 方法`
+     http header：Authorization
+*  `post数据`
+```
+{
+	"user"      : "xxxx",
+        "aId"       : 00,
+        "payment"   : "00",
+        "shipping"  : "00",
+        "freight"   : 0,
+        "total"     : 0,
+        "amount"    : 0,
+        "comment"   : "xxxxx"
+	"order" : {
+              [{pid,pcode,name,price,oPrice,number}],
+              ...
+              [{pid,pcode,name,price,oPrice,number}]
+        }
+}
+```
+*注:  user         - 用户 ,
+     aId          - 地址id ,
+     payment      - 付款方式id
+     pid          - 产品id
+     pcode        - 产品编码
+     name         - 产品名称
+     price        - 当前价格
+     OPrice       - 原价
+     shipping     - 运送方式
+     freight      - 运费,
+     number       - 数量
+     total        - 总数
+     amount       - 总金额（不含运费）
+     comment      - 备注*
+     
+
+* post返回：
+```
+http status : 201 操作成功
+{
+     "user"    : "用户名",
+     "orderId" : 订单id，
+     "orderNo" : 订单号，
+     "amount"  : 总金额，（含运费）
+     "payment" : 付款方式id 
+}
+```
+
+####4.5.2 查看定单例表
+URI: `https://192.168.1.210/o2b/v1.0.0/order`
+
+* `Http get 方法`
+     http header
+* `get数据`
+
+    o = 起始页                  [可选]
+    r = 每页行数                [可选]
+    s = 查询项目                [可选, status|period| ... ]
+    v = 查询条件                [可选，period的取值根据 /o2b/v1.0.0/order/attribute json的code值]
+    q =模糊查询条件              [可选，多查询关键字用 "+" 隔开,只能按订单号及物品名称查询]
+
+* get返回：
+```
+http status : 200
+{
+    "User": "用户名",
+    "OrderList": [
+        [$id,$orderNo,$orderDate,$contact,$total,$amount,$payment,$status,[$imgs,...],
+        ...
+     ]
+}
+```
+
+####4.5.3 查看订单详情
+URI: `https://192.168.1.210/o2b/v1.0.0/order/$oid`
+
+* `Http get 方法`
+     http header：Authorization
+    
+* `get数据：`
+```
+{
+          'User'       :"xxxx@mail.com",
+	  "OrderInfo": {
+               "oid"       : 订单ID,
+               "orderNo"   : "订单号",
+               "orderDate" : "订单生成时间",
+               "status"    : "订单状态",
+               "total"     : 总数量,
+               "amount"    : 总金额
+	       "payment"   : "付款方式",
+          },
+          "AddressInfo": {
+	       "contact" : "联系人",
+	       "mobile"  : "手机号",
+	       "address" : "详细地址",
+	       "zipcode" : "邮编",
+	       "tel"     : "固话",
+	       "email"   : "电子邮件"
+},
+	  'OrderDetail':[[$订单ID,$产品图片,$产品编码,$产品名称,$购买数量,$购买时单价 ,$金额],...]
+}
+```        
+        
+####4.5.4. 删除交易完成类订单
+URI:` https://192.168.1.210/o2b/v1.0.0/order`
+
+* `Http delete 方法`
+     http header：Authorization
+* `delete数据`
+     {
+	"ids":"$id1,$id2,$id3,....,$idn"
+     }
+* delete返回：
+```
+http status : 204
+只要有一个删除成功，即返回状态码204操作成功，无返回
+     http status : 404 没有找到删除订单
+```
+*注：前提是订单必须处于交易完成状态，如交易关闭，交易完成，已退款。*
+
+
+####4.5.5. 取消未发货订单
+URI:` https://192.168.1.210/o2b/v1.0.0/order/$id`
+
+* `Http delete 方法`
+     http header:Authorization
+* `delete返回：`
+```
+http status : 204 操作成功，无返回
+```
+
+####4.5.6. 退换货申请
+URI: `https://192.168.1.210/o2b/v1.0.0/order/returns`
+
+* `Http post 方法`
+    http header：Authorization
+     
+* `post数据:`
+```
+{
+	  "oid" :订单id,
+	  "orderNo":"订单号",
+	  "pcode":"产品编码",
+	  "pname":"产品名称",
+	  "number":退换货数量,
+	  "mode":"类型[T|H|X]",
+	  "description":"商品缺陷说明",
+	  "imgProblem":"上传图片"
+}
+```     
+* post返回：
+```
+http status : 201 操作成功
+{
+    "orderId"     : 订单id,
+    "orderNo"     : "订单号",
+    "user"        : "登录用户名",
+    "swapOrderNo" : "退换货单号"
+}
+```
+
+####4.5.6. 退货根据照片上传
+URI:` https://192.168.1.210/o2b/v1.0.0/order/returns/uploadfile`
+
+* `Http post 方法`
+     http header：Authorization
+    
+* `post数据:`
+```     
+        type        = "order.returns",
+	code        = "产品编码",
+	orderid     = "订单号",
+```   
+* 限制 : 图片最大不能超过4M
+* post返回：
+```
+http status : 201
+{
+"path":"文件所在的路径",
+"filename": "文件名"
+}
+```  
+*注： type   ： 必须为 order.returns 
+    code    : 产品编码
+    orderid : 订单id*
+    
+
+####4.5.7. 退换货状态查询
+URI:` https://192.168.1.210/o2b/v1.0.0/order/returns/$swid`
+
+* `Http get 方法`
+    http header：Authorization
+    
+* get返回：
+```
+{ "swapOrder":[
+    [$id,$swapOrderNo,$orderNo,$oid,$pcode,$pname,$number,$mode,$description,$createTime,$updateTime,$status,$comment],
+    ...
+   ]
+}
+```
+*注：
+$id - 退换货id
+$swapOrderNo - 退换货单号
+              {
+                 "attribute": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+                 "sort"     : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+              }
+ 
+$orderNo     - 订单号
+$oid         - 订单id
+$pcode       - 产品代码
+$pname       - 产品名称
+$number      - 退换货数量
+$mode        - 退换货方式:退货|换货|维修
+$description - 问题描述
+$createTime  - 退换货申请时间
+$updateTime  - [商家答复|状态变更]时间
+$status      - 处理状态
+$comment     - 商家备注*
+
+
+####4.5.8 获得订单配送方式、支付方式、按日期查询的区间代码、按订单状态查询的代码 
+URI: `https://192.168.1.210/o2b/v1.0.0/order/attribute`
+
+* `Http get 方法`
+     http header：Authorization
+    
+* get返回：
+```
+{
+                 "payment": [ ["描述","代码","说明"],["描述","代码","说明"],...["描述","代码","说明"] ], 
+                 "delivery" : [ ["描述","代码","说明"],["描述","代码","说明"],...["描述","代码","说明"] ],
+		 "period":[ ["描述","代码"],["描述","代码"],...["描述","代码"] ],
+		 "status":[ ["描述","代码"],["描述","代码"],...["描述","代码"] ]
+}
+```              
+*注：payment - 付款方式
+   delivery - 配送方式
+   period   - 日期区间
+   status   - 订单状态* 
+
+-----
+
+###4.6 地址库
+####4.6.1 得到地区列表
+URI: `https://192.168.1.210/o2b/v1.0.0/area`
+
+* `HTTP GET方法`
+* `GET数据：`
+            [s|p|c|d]
+            s = 国家                    [可选]
+            p = 省                      [可选]
+            c = 城市                    [可选]
+            d = 区县                    [可选]
+*GET返回：
+ ```             {
+                 'province|city|district' : [$area_id,$area_name],[$area_id,$area_name]...[$area_id,$area_name]]
+                 }
+ ```                
+  *注：area_id   = 编号
+      area_name = 地区名称* 
+
+>* 例1：得到国内的所有省
+https://192.168.1.210/o2b/v1.0.0/area
+
+* 例2：得到国内某省下面的所有市
+https://192.168.1.210/o2b/v1.0.0/area?p=130000
+
+* 例3：得到国内某市下面的所有区/县
+https://192.168.1.210/o2b/v1.0.0/area?c=131000
+
+
+####4.6.2 得到用户的所有地址
+URI: `https://192.168.1.210/o2b/v1.0.0/address`
+
+* `HTTP GET 方法`
+    http header：Authorization
+    
+* `GET参数:
+```
+{
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+}
+```          
+* GET返回：
+```
+{
+       user: 'xxxxx',
+       address : [ [$id,$user,$contact,$tel,$mobile,$email,$province,$city,$area,$street,$address,$isDefault],
+                   [list]
+                   ..
+                   [list]
+                 ]}
+```    
+*注：id - 地址Id
+    user      - 用户名
+    contact   - 联系人
+    tel       - 电话
+    mobile    - 手机
+    email     -  邮件
+    province  - 省
+    city      - 市
+    area      - 县/区
+    street    - 街道
+    address   -  地址
+    isDefault - 是否是默认地址*
+
+
+####4.6.3. 添加新地址
+URI:` https://192.168.1.210/o2b/v1.0.0/address`
+
+* `HTTP POST 方法`
+  http header：Authorization
+     
+* `POST数据:`
+```
+{
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+          c,            # contact - 联系人，不能为空
+          t,            # tel - 固定电话
+          m,            # mobile -联系人手机，不能为空
+          e,            # email - 联系人邮箱
+          pi            # provinceId - 省id，不能为空
+          ci,           # cityId - 市id, 不能为空
+          ai,           # areaId - 区/县id , 不能为空
+          s ,           # street - 街道 
+          a ,           # address - 详细地址
+          z ,           # zipcode - 邮政编码
+          i ,           # isDefault - 是否是默认地址,默认值为N
+}
+          
+```
+* post返回：
+```
+http status : 201
+{
+       'user':    'xxxx',
+       'address' : id     # 地址id
+}
+```
+
+####4.6.4. 删除地址
+URI: `https://192.168.1.210/o2b/v1.0.0/address/$id`
+
+* `HTTP DELETE 方法`
+    http header：Authorization
+     
+* `DELETE数据:`
+```
+{
+          user=$uid,    # [$uid，可以为空，如果$uid为空，后台处理$uid时将从Token中获得
+}
+```          
+* DELETE返回：
+```
+http status : 204 操作成功，无返回
+      无
+```
+
+####4.6.5. 设置默认地址
+URI: `https://192.168.1.210/o2b/v1.0.0/address/$id`
+
+* `Http patch 方法`
+http status : 204 http header：Authorization
+     
+
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+-----
+###4.7 新闻
+####4.7.1 获得新闻列表
+  URI: `https://192.168.1.210/o2b/v1.0.0/news`
+  
+*  ` HTTP GET 方法`
+* ` GET参数：`
+```
+  o = 起始页                  [可选]
+  r = 每页行数                [可选]
+  s = 状态                    [可选，WT-等待申核 OK-已审核 NP-未通过审核 UD-用户删除 HD-屏蔽不显示 NO-未提交审核]
+```  
+* GET返回：
+  ```
+     {
+                 "news" : [
+                     [$id,$title,$author,$source,$summary,$createTime,$CTR,$status_code,$status],
+                     ...`
+                 ]
+              }
+ ```
+ *注：$id  - 新闻ID
+     $title       - 新闻标题
+     $author      - 新闻作者
+     $sou    - 新闻来源
+     $summary     - 新闻摘要
+     $createTime  - 时间
+     $CTR         - 点击率
+     $status_code - 状态码
+     $status      - 状态*
+
+
+####4.7.2. 获得新闻详情
+  URI:` https://192.168.1.210/o2b/v1.0.0/news/$id`
+  
+* `HTTP GET 方法`
+*  GET返回：
+  ```
+              {
+                 "id"         ： 新闻id,
+                 "title"      : '新闻标题',
+                 "author"     : '作者',
+                 "source"     : '新闻来源',
+                 "createTime" : '时间',
+                 "htmContent" : '新闻内容',
+                 "CTR"        : '点击率'
+             }
+  ```
+###4.7.3. 新增新闻
+  URI:` https://192.168.1.210/o2b/v1.0.0/news`
+ 
+ *  `HTTP POST 方法`
+ * `POST数据`
+``` 
+{
+	"title"      : '新闻标题',
+	"author"     : '作者',
+	"source"     : '新闻来源',
+	"summary"    : '新闻摘要',
+	"content"    : '新闻内容',
+	"iscomment"  : '是否允许评论, Y|N ', [可选，默认为Y]
+	"status"     : '状态 NO-只保存不提交审核|WT-提交审核’ [可选，默认值为 NO],
+         "imgFiles"  : '话题内容中的图片列表'
+}
+```   
+*  POST返回：
+  ```
+  新增新闻的id
+  { id : xxx }
+  ```
+  *注：imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，*
+  
+
+####4.7.4. 更改新闻内容
+  URI:` https://192.168.1.210/o2b/v1.0.0/news/$id
+  
+* ` Http put 方法`
+* `put数据：`
+```
+{
+	"title"      : '新闻标题',                           [可选]
+	"author"     : '作者',                               [可选]
+	"source"     : '新闻来源',                            [可选]
+	"summary"    : '新闻摘要',                            [可选]
+	"content"    : '新闻内容',                            [可选]
+	"iscomment"  : '是否允许评论,                          [可选]
+	"status"     : '状态 NO-只保存不提交审核|WT-提交审核’,    [可选]
+	"imgFiles"   : '话题内容中的图片列表'                    [可选]
+	"rImgFiles"  : '更改后删除的图片'                       [可选]
+
+}
+```    
+* put返回：
+```
+http status : 204 操作成功，无返回
+```
+  *注：imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，*
+
+
+
+####4.7.5. 开启或关闭新闻的评论状态
+  URI:` https://192.168.1.210/o2b/v1.0.0/news/$id`
+  
+ * `Http patch 方法`
+     
+     {
+	"iscomment"  : '是否允许评论, Y|N '
+    }
+* patch返回：
+```
+  http status : 204 操作成功，无返回
+```  
+####4.7.6. 申请审核或撤销未审核的新闻
+  URI:` https://192.168.1.210/o2b/v1.0.0/news/$id`
+  
+  * `Http patch 方法`
+     {
+	"st"     : '状态 NO-撤销审核 |WT-提交审核’
+    }
+
+* `patch返回：`
+```
+ http status : 204 操作成功，无返回
+```
+####4.7.7. 置新闻的状态
+  URI:` https://192.168.1.210/o2b/v1.0.0/news/$id`
+  
+* `Http patch 方法`
+    
+* `patch数据：`
+```
+{
+	"st"     : '状态 NO-只保存不提交审核|WT-提交审核|OK-已通过审核|NP-审核未通过|HD-屏蔽不显示’
+}
+```    
+* patch返回：
+  ```
+  http status : 204 操作成功，无返回
+  ```
+####4.7.8. 删除新闻
+  URI: `https://192.168.1.210/o2b/v1.0.0/news/$id`
+  
+* `Http delete 方法`
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+####4.7.9 批量删除新闻
+URI:` https://192.168.1.210/o2b/v1.0.0/news`
+
+* `Http delete 方法`
+     http header：Authorization
+    
+* `delete数据：`
+     {
+       ids : '$id1,$id2,...,$idn'
+     }
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+-----  
+###4.8 广告
+
+####4.8.1 获得N级页面广告信息
+URI:` https://192.168.1.210/o2b/v1.0.0/adSense/$channel/$n`
+
+* `Http get 方法`
+* `get参数：`
+     $channel = 频道
+     $n       = 级别（通常1-3级）
+* get返回：
+```
+{
+       位置码1:[$code,name,$description,$image,$starttime,$endtime,$statusCode,$status,
+		    $totalTopic,$totalFollow,$totalSold,$totalAmount,],...],
+		    ...
+       位置码n:[$code,name,$description,$image,$starttime,$endtime,$statusCode,$status,
+		    $totalTopic,$totalFollow,$totalSold,$totalAmount,],...]
+}
+```     
+*注：位置信息码为：T00-顶部|C00-中部|L00-左侧|R00-右侧|B00-底部  详见：4.8.2 获得广告相关代码对照表
+code        - 产品编码
+name        - 产品名称
+description - 产品描述
+image       - 广告图片
+starttime   - 开始预售时间
+endtime     - 结束预售时间
+statusCode  - 产品状态码
+status      - 产品状态说明
+totalTopic  - 话题数
+totalFollow - 关注数
+totalSold   - 销售数
+totalAmount - 交易额* 
+
+
+>* 例1：获得主页面1级页面广告
+URI: https://192.168.1.210/o2b/v1.0.0/adSense/main/1
+
+* 例2：获得产品频道二级页面广告
+URI: https://192.168.1.210/o2b/v1.0.0/adSense/product/2
+
+* 例3：获得圈子频道三级页面广告
+URI: https://192.168.1.210/o2b/v1.0.0/adSense/groups/3
+
+####4.8.2 获得广告相关代码对照表
+URI：`https://192.168.1.210/o2b/v1.0.0/adSense/attribute`
+
+* `HTTP GET 方法`
+* 输入:无
+* `GET参数:`
+```
+{
+   "channel"  : [ ["频道描述"，"频道代码","最大层级"],["频道描述"，"频道代码"，"频道最大层级"],...["频道描述"，"频道代码","频道最大层级"] ], 
+   "status"   : [ ["状态描述","状态代码"],["状态描述"，"状态代码"],...["状态描述","状态代码"] ],
+   "mode"     : [ ["展示模式描述","展示模式代码"],["展示模式描述","展示模式代码"],...["展示模式描述","展示模式代码"] ],
+   "layout"   : [ ["布局描述","布局代码"],["布局描述","布局代码"],...["布局描述","布局代码"] ]
+}
+```
+*注 ：
+channel  - 网站频道代码
+mode     - 广告展示方式模式
+status   - 广告状态码
+layout   - 广告位置布局*
+
+####4.8.3 获得广告列表（管理用）
+  URI: `https://192.168.1.210/o2b/v1.0.0/adSense`
+  
+ *  输入：
+``` 
+  o = 起始页                  [可选]
+  r = 每页行数                [可选]
+  s =channel|starttime       [可选,取值根据 /o2b/v1.0.0/product/attribute json的Key值]
+  v =asc|desc                [可选，默认为asc，可选时S必须有值]
+  q =单关键字查询条件           [可选]
+  ts=广告投放开始时间           [可选,时间格式 yyyy-mm-dd hh:mm:ss]
+  te=广告投放结束时间           [可选,时间格式 yyyy-mm-dd hh:mm:ss] 
+  st=状态码                   [可选,状态码参见 4.8.2 status 代码对照表,最新状态详见 tbAdSenseStatus表
+			     WAIT-待审核，NOOK-未通过审核,OK-已发布,PASUE-已暂停,STOP-已中止,OPEN-正在投放,CLOSE-投放结束
+			     数据状态，每天凌晨更新一次)
+  ft='OPEN|CLOSE'            [可选，默认为所有投放广告，OPEN-正在投放的广告（含状态为暂停及停止的广告），CLOSE-投放结束的广告]
+]
+```
+* 返回：
+```
+{
+     'count' : '复合条件的记录数'，
+     'list'  : [
+        [id,pid,name,imagelarge,imageBanners,startTime,endTime,statuscode,status,channel,pageindex,level,subindex,
+	 a_status_code,a_status,channel_sort,a_starttime,a_endtime,description,totalTopic,totalFollow,totalSold,totalAmount],
+        ...,
+        [id,pid,name,imagelarge,imageBanners,startTime,endTime,statuscode,status,channel,pageindex,level,subindex,
+         a_status_code,a_status,channel_sort,a_starttime,a_endtime,description,totalTopic,totalFollow,totalSold,totalAmount]'
+     ]
+}
+```
+*注：
+  id            - 广告id
+  pid           - 产品id
+  name          - 产品名称
+  imagelarge    - 广告条幅图(大)
+  imageBanners  - 广告条幅图(中)
+  startTime     - 产品预售开始时间
+  endTime       - 产品预售结束时间
+  statuscode    - 产品状态码
+  status        - 产品状态
+  channel       - 频道code
+  channel_sort  - 频道顺序号
+  pageindex     - 页面级别（1-3级)
+  level         - 页面布局(上下左右中)
+  subindex      - 展示图序列
+  a_status_code - 广告状态码
+  a_status      - 广告状态
+  a_starttime   - 广告投放开始时间
+  a_endtime     - 广告投放结束时间
+  description   - 产品描述
+  totalTopic  - 话题数
+  totalFollow - 关注数
+  totalSold   - 销售数
+  totalAmount - 交易额*
+     
+
+####4.8.4 新增/同步Redis缓存广告
+URI:` https://192.168.1.210/o2b/v1.0.0/adSense`
+
+* `Http post 方法`
+* `post数据：`
+```
+{
+        "cn"  : "合同编号"，
+        "pid" : "产品编号"，
+	"m"   : "广告类型",      [详见4.8.2 mode]
+        "c"   :  "频道"，        [main-主页面  product-产品频道 groups-圈子频道，详见4.8.2 channel返回]
+        "n"   :  "n级页面",      [所在频道页面的级别（通常1-3级）]
+	"l"   :  "广告所在位置"   [详见4.8.2 layout返回]
+	"o"   :  "顺序"          [排序编号]
+	"s"   :  "开始时间",
+	"e"   :  "结束时间",
+	"mode":"SYNC"           [可选，同步时，只有一个mode参数，其它参数不需要输入]
+
+}
+```     
+* post返回：
+```
+http status : 204 操作成功，无返回
+```
+####4.8.5 广告内容修改
+URI:` https://192.168.1.210/o2b/v1.0.0/adSense/$id`
+
+* `Http put 方法`
+* `put数据：`
+```
+{
+        "cn"  : "合同编号"，    [可选]
+        "pid" : "产品编号"，    [可选]
+	"t"   : "广告类型",    [可选，条幅静止 条幅滚动 幻灯片 弹窗 浮动]
+        "c" :  "频道"，        [可选，main-主页面  product-产品频道 groups-圈子频道]
+        "n" :  "n级页面",      [可选，所在频道页面的级别（通常1-3级）]
+	"l" :  "广告所在位置"   [可选，”T-顶部，B-底部，L-左侧,R=右侧,C-中间"]
+	"o" :  "顺序"          [可选，排序编号]
+	"s" :  "开始时间",     [可选]
+	"e" :  "结束时间"      [可选]
+}
+```     
+* put返回：
+```
+http status : 204 操作成功，无返回
+```
+
+####4.8.6 广告发布/审核未通过/暂停/停止状态设置
+URI:` https://192.168.1.210/o2b/v1.0.0/adSense/$id`
+
+* `Http patch 方法`
+* `patch数据：`
+```
+{
+        "st"  : "OK|NOOK|PASUE|STOP",     [WAIT-等待审核 NOOK-审核未通过 OK-发布  PASUE-暂停 STOP-停止下线]
+	"cm"  : "变更原由"
+}
+```     
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+
+####4.8.7 删除广告
+URI: `https://192.168.1.210/o2b/v1.0.0/adSense/$id`
+
+* `Http delete 方法`
+输入：无
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+-----
+###4.9 圈子
+####4.9.1 圈子类别
+URI:` https://192.168.1.210/o2b/v1.0.0/group/attribute`
+
+* `Http get 方法`
+     http header：Authorization
+     
+
+* get返回：
+```
+{
+     "status"   : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+     "category" : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
+     "action"   : [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ]
+}
+``` 
+###4.9.2 创建圈子
+URI:` https://192.168.1.210/o2b/v1.0.0/group`
+
+* `HTTP POST 方法`
+     http header：Authorization
+     
+* `POST数据:`
+```
+{
+       "name"    : "圈子名称",
+       "cat"     : "圈子分类Code",
+       "join"    : "Y|N",  加入权限验证：'Y'代表需要验证加入，'N'代表不需要验证加入
+       "cnt"     : "Y|N",  内容权限验证: 'Y'代表圈内可见，'N'代表所有人可见
+}
+```     
+* POST返回：
+```
+http status : 201
+{
+'group'   :  '圈子名称',
+'groupid' :  '圈子id'
+}
+```     
+     
+
+###4.9.3 查询所有圈子或指定用户的圈子（我创建的圈子）
+URI: `https://192.168.1.210/o2b/v1.0.0/group`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* `get参数：`
+```
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     u = all|hot                [可选，all为平台所有圈子，hot为平台热门圈子，不选为查询缺省用户的所有创建圈子]
+                                      all|hot 是只返回状态为 open 和 pasue 的信息
+     g = 圈子id                  [可选，查具体圈子id时使用]
+```     
+* `get返回：`
+```
+http status : 200
+{ "MyGroups|AllGroups|HotGroups|MyGroup":[
+     [$id,$name,$membership,$totalTopic,$status_code,$status,$isVerifyJoin,$isPrivate],
+     ...,
+     [...]
+   ]
+}
+```
+*注：  
+  "id"          : "圈子id",
+  "name"        : "圈子名称",
+  "membership"  :  成员数，
+  "totalTopic"  :  话题数，
+  "status_code" :  圈子状态码,
+  "status"      : "圈子状态"
+  "isVerifyJoin": "加入权限 Y|N"
+  "isPrivate"   : "内容权限 Y|N"*
+  
+*当查询所有圈子时，只显示圈子状态为正常状态及已暂停的圈子
+当查询我的圈子时，显示所有状态的圈子*
+
+
+####4.9.3A 查询所有圈子或指定用户的圈子（管理员用）
+URI: `https://192.168.1.210/o2b/v1.0.0/group/manage`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* `get参数：`
+```
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     u = all|hot                [可选，all为平台所有圈子，hot为平台热门圈子，不选为查询缺省用户的所有创建圈子]
+                                      all|hot 返回所有状态的圈子信息
+     s = 状态 [可选]
+```     
+* get返回：
+```
+http status : 200
+{ "MyGroups|AllGroups|HotGroups|MyGroup":[
+     [$id,$name,$membership,$totalTopic,$status_code,$status,$isVerifyJoin,$isPrivate,$cat,$owner,$createtime],
+     ...,
+     [...]
+   ]
+}
+```
+*注：  
+  "id"          : "圈子id",
+  "name"        : "圈子名称",
+  "membership"  :  成员数，
+  "totalTopic"  :  话题数，
+  "status_code" :  圈子状态码,
+  "status"      : "圈子状态"，
+  "isVerifyJoin": "加入权限 Y|N"，
+  "isPrivate"   : "内容权限 Y|N"，
+  "header"      : "圈子头像",
+  "cat"         : "圈子类型"，
+  "owner"       : "创建者"，
+  "createtime"  : "创建时间"*
+  
+
+####4.9.3B 管理员设置圈子状态（管理员用）
+URI: `https://192.168.1.210/o2b/v1.0.0/group/manage`
+
+* `Http patch 方法`
+     http header：Authorization
+     
+* `patch数据：`
+```
+ids = 圈子ids 
+s   = 设置状态
+```     
+* `patch返回：`
+```
+http status : 204
+无输出
+```
+   
+####4.9.4 上传圈子头像
+URI:` https://192.168.1.210/o2b/v1.0.0/group/header`
+
+* `Http patch 方法`
+     http header：Authorization
+     
+* `patch数据:`
+```
+gid     = "圈子id"
+picture     = "文件名"  (类型为 file)
+```     
+* patch返回：
+```
+http status : 201
+{
+"url":"文件所在的路径",
+"filename": "文件名"
+}
+```
+####4.9.5 设置圈子信息
+URI:` https://192.168.1.210/o2b/v1.0.0/group`
+
+* `Http put 方法`
+     http header：Authorization
+* `put数据`
+```
+{
+       "gid"  : "圈子id",
+       "join" : "Y|N",
+       "cnt"  : "Y|N",
+       "ntc"  : "公告信息"
+}
+```     
+* put返回：
+```
+http status : 201
+```
+*注： gid  圈子id
+    join 加入权限验证：'Y'代表需要验证加入，'N'代表不需要验证加入
+    cnt  内容权限验证: 'Y'代表圈内可见，'N'代表所有人可见*
+
+
+####4.9.6 查询某圈子的所有用户
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid`
+
+* `Http get 方法`
+    http header：Authorization
+   
+* ` get参数：`
+```
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     s = 'NO'                   [可选,NO为已被禁言的用户]
+     role = 'H|W'               [可选，无H为显示除黑名单H及验证用户W外的所有用户O,S,U]
+```     
+* get返回：
+```
+http status : 200
+{ "GroupUsers":[
+     [$id,$user,$role_code,$role,$joinTime,$lasttime,$totaltopic],
+     ...,
+     [...]
+   ]
+}
+```
+*注：
+$id          ： id
+$user        : 用户名
+$role_code   : 角色代码
+$role        : 角色
+$joinTime    : 加入圈子时间
+$lasttime    : 最后一次访问时间
+$totaltopic  : 圈内话题数*
+
+
+####4.9.7 设置/取消圈内用户的管理员身份
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid`
+
+* `Http patch 方法`
+    http header：Authorization
+    
+* `patch数据：`
+```
+{
+"guids" : "圈与用户关系id1,id2,...,idn",
+"role" : "S|U" 
+}
+```    
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+*注: "role" : "S"-管理员代码 "U"-普通用户代码，即role置"S"时用户得到管理员身份，置"U"时用户取消管理员身份
+    guid可识别userId*
+
+####4.9.8 将圈内用户加入/取消黑名单
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid`
+
+* `Http patch 方法`
+    http header：Authorization
+    
+* `patch数据：`
+```
+{
+"guids" : "圈与用户关系id,id2,...,idn",
+"role" : "H|U" 
+}
+```    
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+*注: "role" : "H"-已拉黑，拉黑用户不能进入该圈子 "U"-普通用户代码
+    guid可识别userId*
+
+####4.9.9 将用户踢出圈子
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid`
+
+* `Http delete 方法`
+    http header：Authorization
+    
+* `delete数据：`
+```
+{
+"guid" : "id",
+"cmt"  : "踢出理由" 
+}
+```    
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+####4.9.10 启用/设置用户禁言
+URI: `https://192.168.1.210/o2b/v1.0.0/group/$gid`
+
+* `Http patch 方法`
+    http header：Authorization
+    
+* `patch数据：`
+```
+{
+"guids"   : "圈与用户关系id1,id2,...,idn",
+"st"     : "NO|OK" 
+}
+```    
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+*注: "status" : "NO"-禁言，不能发帖 "OK"-解除禁言，可以发帖*
+
+####4.9.11 审核通过|驳回
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid`
+
+* `Http patch 方法`
+    http header：Authorization
+* `patch数据：`
+```
+{
+"vids"    : "待审核的圈子与用户关系id1,id2,...,idn",
+"role"   : "U"
+"st"     ： "OK|NP" 
+}
+```    
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+*注: "status" :  "OK"-正常状态，可以发帖，"NP"-驳回并删除*
+
+
+####4.9.X 设置圈子状态 （平台管理员功能）
+
+*注：只有圈子的创建者可以管理圈子
+行为码说明：行为码通过表tbGroupAction获得，URI为:`https://192.168.1.210/o2b/v1.0.0/group/attribute`
+   open    - 将close状态的圈子开启
+   close   - 关闭圈子（关闭圈子即冻结，非解散圈子，指不准许用户加入该圈子，也不准许圈子里的用户新增、删除、更改帖子）
+   pause   - 暂停新用户的加入
+   public  - 开放加入
+   private - 私有圈子，授权用户加入*
+     
+
+
+####4.9.12 用户加入圈子
+URI: `https://192.168.1.210/o2b/v1.0.0/group/$gid/user`
+
+* `Http post 方法`
+    http header：Authorization
+     
+
+* `post数据：`
+```
+{
+"st"    : "状态码 WT|OK" ,WT - 等待验证 
+"vm"    : "验证申请理由"  ,当st=WT时，vm必须有值
+}     
+```
+* post返回：
+```
+http status : 201
+{
+  "id"         : 圈子id,
+  "name"       : "圈子名称",
+  "membership" : 圈子成员数量
+}
+```
+####4.9.13 得到用户在某圈子中的权限
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid/user`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* get返回：
+```
+http status : 200
+{
+  "groupid" : 圈子id,
+  "user"    : "用户名",
+  "role"    : "用户权限,O|S|U|H"
+  "status"  : 状态，状态为UE-用户退出 KO-踢出 WT-等待审核 OK-正常 NO-禁言 NP-驳回不通过
+}
+```
+*注：O - 圈子拥有者
+   S - 圈子管理者
+   U - 圈子普通用户
+   H - 黑名单用户*
+      
+
+####4.9.14 用户退出圈子
+URI: `https://192.168.1.210/o2b/v1.0.0/group/$gid/user`
+
+* `Http delete 方法`
+     http header：Authorization
+     
+* delete返回：
+```
+http status : 201
+{
+  "id"         : 圈子id,
+  "name"       : "圈子名称",
+  "membership" : 圈子成员数量
+}
+```
+
+####4.9.15 我的圈子
+URI:` https://192.168.1.210/o2b/v1.0.0/user/group`
+
+* `Http get 方法`
+     http header：Authorization
+      
+* `get参数：`
+```
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+```     
+* get返回：
+```
+http status : 200
+{ "MyJoinGroups":[
+     [$id,$name,$role,$membership,$totalTopic],
+     ...,
+     [...]
+   ]
+}
+```
+*注：  
+  "id"          : "圈子id",
+  "name"        : "圈子名称",
+  "role"        : "用户在圈子中的权限"
+  "membership"  :  成员数，
+  "totalTopic"  :  话题数*
+
+*返回的是所有圈子状态为正常状态及已暂停的圈子，
+圈子按用户在圈子中的权限+时间顺序倒排，即用户自己创建的圈子排在第一位，
+其次是普通权限圈子*
+
+
+####4.9.16 圈子详情
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid/info`
+
+* `Http get 方法`
+     http header：Authorization
+      
+     
+* get返回：
+```
+http status : 200
+{
+    "Administrator": [
+        [guid,user,role_code,role,nickname,header],
+	...,
+        [guid,user,role_code,role,nickname,header],
+    ],
+    "Group": {
+        "name"          : "圈名",
+	"createTime"    : "创建时间",
+	"notice"        : "公告"，
+        "status_code"   : "圈子状态",
+        "isVerifyJoin"  : "是否需要验证加入 Y|N",
+        "gid"           : 圈子id,
+        "cat"           : "圈子类型",
+        "totalTopic"    : 圈子话题数,
+        "header"        : "圈子头像",
+        "isPrivate"     : "是否私有",
+        "status"        : "圈子状态",
+        "membership"    : 圈子成员数
+    }
+}
+```
+*注：
+guid       组用户权限
+user       用户名
+role_code  角色代码
+role       角色
+nickname   昵称
+header     用户头像* 
+
+###4.9.17
+
+###4.9.18 话题
+####4.9.18.1 查看圈子下的所有话题
+URI: `https://192.168.1.210/o2b/v1.0.0/group/$gid/topics`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* `get参数：`
+```
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     q = 查询关键字               [可选，非模糊查询]
+```     
+* get返回：
+```
+{
+        'gid'    : 圈子id,
+	'count'  : 圈子总话题数,
+        'topics' : [
+	   [tid,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status],
+	   ...
+	   [tid,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status]
+         ]
+}
+```  
+*注：
+gid        圈子id,
+count      圈子的总话题数,
+tid        话题id,
+user       用户名,
+nickname   昵称,
+header     用户头像，
+topic      帖子名称
+contents   话题内容（前200个字）
+createTime 创建时间,
+viewCount  浏览数,
+replyCount 回帖子数
+isTop      是否置顶
+isEssence  是否精华
+status_code 状态码
+status      状态*
+
+####4.9.18.2 查看对某话题的详情（含话题内容，无回复）
+URI:` https://192.168.1.210/o2b/v1.0.0/group/topics/$tid`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* get返回：
+```
+{
+        id         : 话题id
+        gid        : 圈子id
+	user       : 用户名
+	nickname   : 昵称
+	header     : 用户头像
+	topic      : 帖子名称
+	contents   : 帖子内容
+	createTime : 创建时间
+	viewCount  : 浏览数
+	replyCount : 回帖子数
+	isTop      : 是否置顶
+	isEssence  : 是否精华
+	status_code: 状态码
+	status     : 状态说明
+}
+```
+
+####4.9.18.3 查看对某话题的评论（含回帖）
+URI:` https://192.168.1.210/o2b/v1.0.0/group/topics/$tid/comment`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* `get参数：`
+```
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+```     
+* get返回：
+```
+{
+      coments: [
+	        {
+	         comment: [cid,tid,gid,user,nickname,header,contents,createTime,status_code,status],
+		 reply  : [
+			    [rid,cid,tid,gid,user,nickname,header,toReplyUser,toReplyNickname,contents,createTime,status_code,status],
+	       	  	    [...],
+			    ...,
+			    [...]
+			 ]
+               },
+               {...},
+               ...,
+               {...},
+             ],
+      count : 话题的总评论数
+}
+```
+*注：
+comment    ：评论
+rid        : 回复id
+cid        : 评论id
+tid        : 话题id
+user       : 用户名
+nickname   : 昵称
+header     : 用户头像
+topic      : 帖子名称
+contents   : 帖子内容
+createTime : 创建时间
+status_code: 状态码
+status     : 状态*
+
+
+####4.9.18.4 圈子下新增话题
+URI: `https://192.168.1.210/o2b/v1.0.0/group/$gid/topics`
+
+* `Http post 方法`
+     http header：Authorization
+     
+* `post数据：`
+```
+{
+       topic   : '话题Title',
+       summary : '话题摘要',
+       content : '话题内容'，
+       imgFiles : '话题内容中的图片列表',
+       status   : '话题状态' [可选]
+}
+```     
+* post返回：
+```
+{ tid : '话题id' }
+```     
+*注： 1.imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+       如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+     2. status = OK|NR
+     OK-正常 NR-不准许回复,status为空字符串时与OK状态等同*
+
+####4.9.18.5 圈子下修改话题
+URI:` https://192.168.1.210/o2b/v1.0.0/group/topics/$tid`
+
+   * `Http put 方法`
+    http header：Authorization
+*`put数据`
+```
+
+{
+       topic      : '更改后的话题Title'|Null，
+       summary    : '话题摘要'|Null,
+       content    : '更改后话题内容'|Null，
+       imgFiles   : '更改话题内容中的新增图片列表'|Null,        [可选]
+       rImgFiles  : '更改后删除的图片'|Null                   [可选]
+       status   : '话题状态'                                 [可选]
+}
+```     
+*注： 1. topic/content/summary/imgFiles 没有发生修改时为Null
+    2. imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+    3. 如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg
+    4. status = OK|NR
+       OK-正常 NR-不准许回复,status为空字符串时与OK状态等同*
+
+####4.9.18.6 删除话题
+URI: `https://192.168.1.210/o2b/v1.0.0/group/topics/$tid`
+
+* `Http delete 方法`
+    http header：Authorization
+     
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+
+####4.9.18.7 新增话题评论
+URI: `https://192.168.1.210/o2b/v1.0.0/group/topics/$tid/comment`
+
+* `Http post 方法`
+    http header：Authorization
+     
+* `post数据：`
+```
+{
+       gid     : '圈子id',
+       content : '评论内容'，
+       imgFiles : '话题内容中的图片列表'
+}
+```     
+* post返回：
+```
+     { cid : '评论id' }
+```     
+*注： imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+     如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg*
+
+
+####4.9.18.8 新增评论回复
+URI:` https://192.168.1.210/o2b/v1.0.0/group/topics/comment/$cid/reply`
+
+* `Http post 方法`
+    http header：Authorization
+    
+* `post数据：`
+```
+{
+       gid     : '圈子id',
+       tid     : '话题id',
+       touser  : '接收回复者id’，
+       tonick  : '接收回复者的昵称'
+       content : '回复内容'，
+}
+```     
+* post返回：
+```
+{ rid : '回复id' }
+```     
+*注： imgFiels 里的文件名以 "," 分隔，文件名前需要带含有/tmp/路经，
+     如 /tmp/20141021/1.jpg,/tmp/20141021/2.jpg,/tmp/20141021/3.jpg*
+
+
+####4.9.18.9 话题加/去精，置顶/去置顶，设置状态
+URI:` https://192.168.1.210/o2b/v1.0.0/group/topics/$tid`
+
+* `Http patch 方法`
+     http header：Authorization
+    
+* `patch数据：`
+```
+{
+    ssence     : 'Y|N'，    [可选，Y-加精 N-去精]
+    top        ： 'Y|N'，    [可选，Y-置顶 N-去置顶]
+    status     : 'OK|NR|HD' [可选, OK-正常，NR-不充许回复，HD-隐藏话题]
+}
+```     
+* patch返回：
+```
+http status : 204 操作成功，无返回
+```
+####4.9.18.10 批量删除圈子下的话题
+URI:` https://192.168.1.210/o2b/v1.0.0/group/$gid/topics`
+
+* `Http delete 方法`
+     http header：Authorization
+    
+* `delete 数据：`
+```
+{
+ids : '$id1,$id2,...,$idn'
+}
+```     
+* delete返回：
+```
+http status : 204 操作成功，无返回
+```
+###4.10 用户
+
+####4.10.1 增加一个用户
+URI:` https://192.168.1.210/o2b/v1.0.0/user`
+
+* `Http post 方法`
+     http header：Authorization
+    
+* `post数据:`
+```
+{
+        'u' : '电子邮箱',
+	'p' : '密码',
+	'n' : '昵称',
+	'm' : '手机号' [可选]
+}
+```     
+* post返回：
+```
+{
+  'id' : 'tbUser表中的id'
+}
+```
+####4.10.2 检查一个用户是否存在（邮件方式）
+URI:` https://192.168.1.210/o2b/v1.0.0/user`
+
+* `Http get 方法`
+     http header：Authorization
+    
+* `get参数:`
+```
+   u='电子邮件地址'
+*输出: 
+'Y'|'N'
+```
+*注：用户存在返回 'Y' ,否则返回 'N'*
+
+
+####4.10.3 检查一个用户是否存在（昵称方式）
+URI:` https://192.168.1.210/o2b/v1.0.0/user`
+
+* `Http get 方法`
+     http header：Authorization
+    
+* `get参数:`
+```
+   n='用户昵称'
+```   
+* get返回：
+```
+'Y'|'N'
+```
+*注：用户存在返回 'Y' ,否则返回 'N'*
+
+
+####4.10.4 查看用户信息
+URI:` https://192.168.1.210/o2b/v1.0.0/user/$id/info`
+
+* `Http get 方法`
+     http header：Authorization
+     
+* `get参数`
+```
+{
+       "user"       : "用户id",
+       "nickname"   : "昵称",
+       "header"     : "头像",
+       "gender"     : "性别，M|F",
+       "provinceId" : "省/直辖市编码",
+       "cityId"     : "市/直辖市区编码",
+       "introduce"  : "自我介绍",
+       "mobile"     : "手机号",
+       "email"      : "电子邮件"
+}
+```     
+####4.10.4A 修改用户信息
+URI: `https://192.168.1.210/o2b/v1.0.0/user/$id/info`
+
+* `Http put 方法`
+     http header：Authorization
+     
+* `put数据:`
+```
+{
+        "u"   : "用户ID",    
+    "g"   : "性别",           [可选，值为M|F]
+    "p"   : "省/直辖市编码",   [可选]
+    "c"   : "市/直辖市区编码", [可选，和参数p成对出现]
+    "i"   : "自我介绍",       [可选]
+    "m"   : "手机号",         [可选]
+    "e"   : "电子邮件",       [可选]
+}
+```     
+* put返回：
+```
+http status : 204
+```
+####4.10.5 上传用户头像
+URI:` https://192.168.1.210/o2b/v1.0.0/user/header`
+
+* `Http post 方法`
+     http header：Authorization
+    
+* `post数据:`
+```
+        type        = "header"
+	picture     = "文件名"  (类型为 file)
+```     
+* post返回：
+```
+http status : 201
+{
+"url":"文件所在的路径",
+"filename": "文件名"
+}
+```
+####4.10.6 用户变更密码
+URI:` https://192.168.1.210/o2b/v1.0.0/user/info/pmssmed`
+
+* `Http patch 方法`
+    http header：Authorization
+    
+* `patch数据:`
+```
+{
+        "oldPwd" : "原密码",
+	"newPwd" : "新密码"
+}
+```     
+* patch返回：
+```
+http status : 204
+```
+
+####4.10.7 绑定手机
+
+
+####4.10.8. （我的关注 - 产品）列出用户的所有关注产品
+URI:` https://192.168.1.210/o2b/v1.0.0/user/product/follow`
+
+* `HTTP GET 方法`
+     http header：Authorization
+    
+* `GET参数`
+* GET返回：
+```
+http status : 200
+{
+ product : [$pid,$code,$categoryCode,$name,$image,$starttime,$endTime,$statusCode,$status,
+                            $totalTopic,$totalFollow,$totalSold,$totalAmount)],...]
+}
+```
+-----
+
+###4.11 消息
+####4.11.1. 消息探测（得到最新的消息数量）
+URI:` https://192.168.1.210/o2b/v1.0.0/message/sniffing`
+
+* `Http GET 方法`
+     http header：Authorization
+    
+* `GET 参数:`
+* GETF返回：
+```
+http status : 200
+{
+   unread_count: 未读消息数量,
+   read_count  : 已读消息数量
+}
+```
+####4.11.2. 得到已读|未读消息列表
+URI:` https://192.168.1.210/o2b/v1.0.0/message/unread`
+
+* `Http GET 方法`
+     http header：Authorization
+   
+* `GET 参数:`
+```
+          o = 起始页                  [可选]
+          r = 每页行数                [可选]
+          s =unread|read             [可选,默认为unread, unread-未读 read-已读]
+```
+* GET返回：
+```
+http status : 200
+{
+  msg_list_UNREAD|msg_list_READ: [
+    {
+      id    : "消息ID",
+      level : "消息级别",
+      time  : "消息时间",
+      from  : "发件人用户ID",
+      name  : "发件人昵称",
+      msg   : "消息内容"
+    },
+    ...
+    {
+      id    : "消息ID",
+      level : "消息级别",
+      time  : "消息时间",
+      from  : "发件人用户ID",
+      name  : "发件人昵称",
+      msg   : "消息内容"
+   }
+ ]
+}
+```
+
+####4.11.3. 得到消息具体内容
+URI:` https://192.168.1.210/o2b/v1.0.0/message/$mid
+
+* `HTTP GET 方法`
+    http header：Authorization
+
+* `GET 参数:`
+* GET返回：
+```
+http status : 200
+{
+  level : "消息级别",
+  time  : "消息时间",
+  from  : "发件人用户ID",
+  name  : "发件人昵称",
+  title : "消息标题",
+  msg   : "消息内容"
+}
+```
+
+####4.11.4. 删除指定消息
+URI: `https://192.168.1.210/o2b/v1.0.0/message/$mid`
+
+* `Http delete 方法`
+     http header：Authorization
+    
+* `delete 参数:`
+* delete 返回：
+```
+    删除成功无输出 http status : 201
+```
+
+####4.11.5. 批量删除消息
+URI:` https://192.168.1.210/o2b/v1.0.0/message`
+
+* `Http delete 方法`
+    http header：Authorization
+
+* `delete数据:`
+```
+{ 
+ids : '$id1,$id2,...,$idn'
+}
+```     
+* `delete返回：`
+```
+http status : 200
+{
+  count : 成功删除的数量
+}
+```
+
+####4.11.6. 发送消息
+URI:` https://192.168.1.210/o2b/v1.0.0/message`
+
+* `HTTP POST 方法`
+    http header：Authorization
+    
+* `POST数据:`
+```
+{
+ to    : '接收消息UserID',
+ title : '消息标题',
+ msg   : '消息内容',
+}
+```     
+* POST返回：
+```
+发送成功无输出 http status : 201
+```
+
+-----
+###4.12 供应商管理
+####4.12.1 供应商代码列表
+URI:` https://192.168.1.210/o2b/v1.0.0/supplier`
+
+* `Http get 方法`
+     http header：Authorization
+    
+* `get参数:`
+无
+* get返回： 
+```
+     http status : 200
+     数据：
+{
+       'supplier' : {
+           'struct' : 'id,code,companyName,pinyin',
+	   'list'   : [[id,code,companyName,pinyin],...,[id,code,companyName,pinyin]]
+        }
+}
+```
+ 
+
+###4.13 系统服务
+
+####4.13.1 文件上传
+URI:` https://192.168.1.210/o2b/v1.0.0/service/uploadfile`
+
+* `Http post 方法`
+     http header：Authorization
+    
+* `post数据:`
+```     
+        type         = "图像归属类型",
+	code         = "编码",
+	orderid      = "订单号",
+	groupid      = "圈子id"
+   
+限制 : 图片最大不能超过4M
+```
+* post返回：
+```
+http status : 201
+{
+"url":"文件所在的路径",
+"filename": "文件名"
+}
+```  
+实际输出文件名前面有:"tmp_"头，为临时文件，待文本信息正时提交后，自动去掉'tmp_'头成为正式文件
+*注： type 图像归属类型 ： userheader | prodcut.banner | prodcut.large | prodcut.medium | prodcut.small | order.returns |  group
+    code 产品编码     : 当类型是 userheader 或 groupid  时为空 ''
+                      当类型是 prodcut.banner|large|medium|small   时为 product 的产品编码
+	             当类型是 order.returns 时为 product 的产品编码
+    order_id 订单id  : 当类型为 order.returns 有效
+    groupid  圈子id  : 当类型为 group时有效*		  
+    
+
+####4.13.2 发送短信
+URI:` https://192.168.1.210/o2b/v1.0.0/service/sms`
+
+* `Http post 方法`
+     http header：Authorization
+    
+* `post数据:`
+```
+{
+	'm' : '校验后的手机号码，多号码之间用,号分隔',
+	'c' : '短信内容'，
+	't' : 'VER，短信类型'
+}
+```    
+*注： VER=校验码*
+
+* post返回：
+```
+http status : 204 操作成功，无返回
+```
+
+
+####5. API 说明
+URI:` https://192.168.1.210/o2b/v1.0.0/apis`
+
+* `Http get 方法`
+    
+* `get参数:`
+```     
+n         = "当前节点",
+f         = "父节点",
+```
+* get返回： 
+```
+http status : 200
+{
+[[$id,$node,$fatherNode,$URI,$name,$description,$httpMethod,$inputParameter,$inputData,$outputStatus,$outData,$comment],
+ ...,
+ ]
+}
+```
+*注： 不加n,f参数时只列出主节点*
