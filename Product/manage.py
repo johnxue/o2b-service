@@ -43,7 +43,7 @@ class Handler(WebRequestHandler):
             
     def post(self):
         try :
-            super().get(self)
+            super().post(self)
             objUser=self.objUserInfo
             user=objUser['user']             
             objData=self.getRequestData()
@@ -107,7 +107,7 @@ class Handler(WebRequestHandler):
 
     def put(self):
         try :
-            super().get(self)
+            super().put(self)
             objUser=self.objUserInfo
             user=objUser['user']             
             objData=self.getRequestData()

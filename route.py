@@ -13,8 +13,8 @@ import User,Group,Service,Message,Product,Order,Supplier,News,AdSense
 
 from User         import list,detail,follow,changePassword
 from Message      import list,detail,sniffing,send
-from Group        import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics
-from Group.Topics import list,detail,commentDetail,commentReply
+from Group        import attribute,list,usermanage,userAction,userinfo,groupinfo,Topics,manage
+from Group.Topics import list,detail,commentDetail,commentReply,hot
 from Supplier     import list
 from Order        import attribute,list,detail
 from News         import list,detail
@@ -44,8 +44,9 @@ handlers = [
             # 用户管理
             (r"/o2b/v1.0.0/user/product/follow", User.follow.info),
             (r"/o2b/v1.0.0/user/info/pmssmed", User.changePassword.Handler),
+            (r"/o2b/v1.0.0/user/info", User.detail.Handler),
             (r"/o2b/v1.0.0/user/header", Service.uploadfile.Handler),
-            (r"/o2b/v1.0.0/user/(.*)/info", User.detail.Handler),
+            #(r"/o2b/v1.0.0/user/(.*)/info", User.detail.Handler),
             (r"/o2b/v1.0.0/user", User.list.Handler),
             
             #(r"/o2b/v1.0.0/user/info", User.follow.info)
@@ -81,6 +82,8 @@ handlers = [
             (r"/o2b/v1.0.0/group/([0-9]+)/user", Group.userAction.Handler),
             (r"/o2b/v1.0.0/group/([0-9]+)/info", Group.groupinfo.Handler),
             (r"/o2b/v1.0.0/user/group", Group.userinfo.Handler),
+            (r"/o2b/v1.0.0/group/manage", Group.manage.Handler),
+            
             
             
             #(r"/o2b/v1.0.0/group/([0-9]+)", Group.manage.Handler),
@@ -89,6 +92,7 @@ handlers = [
             (r"/o2b/v1.0.0/group/header", Group.list.info),
             
             # 话题
+            (r"/o2b/v1.0.0/group/topics/hot", Group.Topics.hot.Handler),
             (r"/o2b/v1.0.0/group/([0-9]+)/topics", Group.Topics.list.Handler),
             (r"/o2b/v1.0.0/group/topics/([0-9]+)", Group.Topics.detail.Handler),
             (r"/o2b/v1.0.0/group/topics/([0-9]+)/comment", Group.Topics.commentDetail.Handler),

@@ -32,7 +32,7 @@ class Handler(WebRequestHandler):
 
             #1. 查询圈子的帖子
             topicsSelect={
-                'select' : 'id,gid,user,nickname,header,topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status',
+                'select' : "id,gid,user,nickname,{{CONCAT('%s/'}},{{header) as header}},topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status" % (config.imageConfig['userheader']['url']),
                 'where'  : "gid=%s" % (gid,),
                 'limit' : '%s,%s' % (offset,rowcount)
             }

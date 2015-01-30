@@ -1275,7 +1275,56 @@ URI: https://192.168.1.210/o2b/v1.0.0/group
   
 当查询所有圈子时，只显示圈子状态为正常状态及已暂停的圈子
 当查询我的圈子时，显示所有状态的圈子
-   
+
+
+4.9.3A 查询所有圈子或指定用户的圈子（管理员用）
+URI: https://192.168.1.210/o2b/v1.0.0/group/manage
+输入：
+     http header：Authorization
+     方法:get 
+     查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+     u = all|hot                [可选，all为平台所有圈子，hot为平台热门圈子，不选为查询缺省用户的所有创建圈子]
+                                      all|hot 返回所有状态的圈子信息
+     s = 状态 [可选]
+     
+输出：http status : 200
+{ "MyGroups|AllGroups|HotGroups|MyGroup":[
+     [$id,$name,$membership,$totalTopic,$status_code,$status,$isVerifyJoin,$isPrivate,$cat,$owner,$createtime],
+     ...,
+     [...]
+   ]
+}
+注：  
+  "id"          : "圈子id",
+  "name"        : "圈子名称",
+  "membership"  :  成员数，
+  "totalTopic"  :  话题数，
+  "status_code" :  圈子状态码,
+  "status"      : "圈子状态"，
+  "isVerifyJoin": "加入权限 Y|N"，
+  "isPrivate"   : "内容权限 Y|N"，
+  "header"      : "圈子头像",
+  "cat"         : "圈子类型"，
+  "owner"       : "创建者"，
+  "createtime"  : "创建时间"
+  
+
+4.9.3B 管理员设置圈子状态（管理员用）
+URI: https://192.168.1.210/o2b/v1.0.0/group/manage
+输入：
+     http header：Authorization
+     方法:patch
+     查询参数：
+     ids = 圈子ids 
+     s   = 设置状态
+     
+输出：http status : 204
+无输出
+
+
+
 4.9.4 上传圈子头像
 URI: https://192.168.1.210/o2b/v1.0.0/group/header
 输入：
@@ -1530,7 +1579,41 @@ role       角色
 nickname   昵称
 header     用户头像 
 
-4.9.17
+4.9.17 热门话题
+URI: https://192.168.1.210/o2b/v1.0.0/topics/hot
+输入：
+     http header：Authorization
+     方法:get
+     查询参数：
+     o = 起始页                  [可选]
+     r = 每页行数                [可选]
+输出：
+     {
+	'count'  : 圈子总话题数,
+	'struct' : 'id,gid,user,nickname,header,topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status',
+        'topics' : [
+	   [tid,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status],
+	   ...
+	   [tid,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status]
+         ]
+     }
+注：
+gid        圈子id,
+count      圈子的总话题数,
+tid        话题id,
+user       用户名,
+nickname   昵称,
+header     用户头像，
+topic      帖子名称
+contents   话题内容（前200个字）
+createTime 创建时间,
+viewCount  浏览数,
+replyCount 回帖子数
+isTop      是否置顶
+isEssence  是否精华
+status_code 状态码
+status      状态
+
 
 4.9.18 话题
 4.9.18.1 查看圈子下的所有话题
@@ -1796,12 +1879,33 @@ URI: https://192.168.1.210/o2b/v1.0.0/user/$id/info
      方法:get
 输出：     参数:
      {
-        "nickname"   : "昵称",
-	"heard_icon" : "头像文件名",
-	"my_group"   : "",
-	"join_group" : ""
+       "user"       : "用户id",
+       "nickname"   : "昵称",
+       "header"     : "头像",
+       "gender"     : "性别，M|F",
+       "provinceId" : "省/直辖市编码",
+       "cityId"     : "市/直辖市区编码",
+       "introduce"  : "自我介绍",
+       "mobile"     : "手机号",
+       "email"      : "电子邮件"
      }
-
+     
+4.10.4A 修改用户信息
+URI: https://192.168.1.210/o2b/v1.0.0/user/$id/info
+输入：
+     http header：Authorization
+     方法: put
+参数:
+     {
+        "u"   : "用户ID",    
+	"g"   : "性别",           [可选，值为M|F]
+	"p"   : "省/直辖市编码",   [可选]
+	"c"   : "市/直辖市区编码", [可选，和参数p成对出现]
+	"i"   : "自我介绍",       [可选]
+	"m"   : "手机号",         [可选]
+	"e"   : "电子邮件",       [可选]
+     }
+输出：  http status : 204
 
 4.10.5 上传用户头像
 URI: https://192.168.1.210/o2b/v1.0.0/user/header

@@ -33,7 +33,7 @@ class Handler(WebRequestHandler):
             
             #1. 查询圈子话题的评论（按时间顺序排例）
             Select={
-                'select' : 'cid,tid,gid,user,nickname,header,contents,createTime,status_code,status',
+                'select' : "cid,tid,gid,user,nickname,{{CONCAT('%s/'}},{{header) as header}},contents,createTime,status_code,status" % (config.imageConfig['userheader']['url']),
                 'where'  : "tid=%s" % (tid,),
                 'limit' : '%s,%s' % (offset,rowcount)
             }
@@ -116,6 +116,8 @@ class Handler(WebRequestHandler):
                 'status'     : status
             }
             cid=db.insert('tbGTComment',insertData)
+            rowcount=db.updateByPk('tbGroupTopics',{'replyCount':'{{replyCount+1}}'},tid)
+            
             db.close()
             if cid<0 : 
                 # 插入失败后删除成功移动的文件

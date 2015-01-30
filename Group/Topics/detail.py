@@ -31,13 +31,15 @@ class Handler(WebRequestHandler):
             
             #1. 查询圈子的帖子
             Select={
-                'select' : 'id,gid,user,nickname,header,topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status',
+                'select' : "id,gid,user,nickname,{{CONCAT('%s/'}},{{header) as header}},topic,contents,createTime,viewCount,replyCount,isTop,isEssence,status_code,status" % (config.imageConfig['userheader']['url']),
                 'where'  : "id=%s" % (tid,)
             }
             objTopicsContent = db.getToObjectByPk('vwGroupTopics',Select,tid)
-            db.close()
             
             if len(objTopicsContent)==0 : raise BaseError(802) # 没有找到数据
+            
+            rowcount=db.updateByPk('tbGroupTopics',{'viewCount':'{{viewCount+1}}'},tid)
+            db.close()
             
             self.response(objTopicsContent)
         except BaseError as e:

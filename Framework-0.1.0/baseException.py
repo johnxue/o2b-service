@@ -164,13 +164,9 @@ errorDic={
 }
 
 
-# _version_ = 0.2.0
-# 新增strErrorNMessage参数，传递原始的错误信息
-
 class BaseError(Exception) :
-    def __init__(self,code,strErrorMessage='') :
+    def __init__(self,code) :
         self.code=code
-        self.message = strErrorMessage
     
     def __str__(self) :
         return repl(self.code)

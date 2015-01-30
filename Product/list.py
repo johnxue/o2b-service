@@ -226,7 +226,7 @@ class info(WebRequestHandler):
             except:
                 raise BaseError(801) # 参数错误
             
-            ads=entity.adsense()
+            ads=entity.product()
             db=self.openDB()
             aid=ads.delete(ids,db)
             self.closeDB()

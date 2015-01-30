@@ -1,13 +1,8 @@
-# _version_ = 0.2.0
-# 增加   returnErrorInfo 方法替换旧的 gotoErrorPage方法，新的returnErrorInfo可以返回具体的原始错误信息
-# 将异常处理由 @operator_except 来统一捕获
-
-
 import tornado.web
 import tornado.gen
 import config
 from Framework.baseException import errorDic,BaseError
-import decimal,datetime,json,ujson
+import decimal,datetime,json
 import inspect
 from easyOAuth.userinfo import Token
 from User import entity
@@ -47,14 +42,12 @@ class DecimalAndDateTimeEncoder(json.JSONEncoder):
         #return super(DecimalEncoder, self).default(o)   
 
 class WebRequestHandler(tornado.web.RequestHandler):
-
-    # Http Options
     def options(self,*args,**kwargs):
         self.set_header('Access-Control-Allow-Origin','*')
         self.set_header('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,PATCH')
         self.set_header('Access-Control-Allow-Headers', 'app-key,app-secret,authorization,Content-type,X_Requested_With')
     
-    # Http Response
+    
     def response(self,data=None,status=200,angluar=True,callback=None,async=False):
 
         if status==200 : # 自动识别状态码
@@ -81,9 +74,6 @@ class WebRequestHandler(tornado.web.RequestHandler):
         
     def getRequestHeader(self,header):
         return self.request.headers.get(header)
-        
-    def init(self):
-        self.__init()
         
     def __init(self,*args,**kwargs):
         self._db_=None
@@ -116,9 +106,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def patch(self,*args,**kwargs):
         self.__init()        
         
-    
     def gotoErrorPage(self,error_code,error_string='',help=False) :
-        #    _version_=0.1.0
         #在错误处理中如果数据库连接是打开发，应回滚并关闭,回滚前须提交的数据必须提交
         try :
             if self._db_ is not None :
@@ -135,36 +123,6 @@ class WebRequestHandler(tornado.web.RequestHandler):
         # 如果存在自定义的错误消息者，替换原消息体
         if error_string!='' :
             error['message']=error_string
-            
-        if help is False :
-            try :
-                del error['help_document']
-            except :
-                pass
-            
-        self.response(error,error['status'])    
-
-
-    def returnErrorInfo(self,e,help=False) :
-        #在错误处理中如果数据库连接是打开发，应回滚并关闭,回滚前须提交的数据必须提交
-        #_version_=0.2.0
-        error_code=e.code
-        error_string=e.message
-        try :
-            if self._db_ is not None :
-                self._db_.rollback()
-                self.closeDB()
-        except:
-            pass
-        eid=int(error_code)
-        try:
-            error=errorDic[eid]
-        except:
-            error=errorDic[900]
-        
-        # 如果存在自定义的错误消息者，替换原消息体
-        if error_string :
-            error['original message']=error_string
             
         if help is False :
             try :
@@ -216,8 +174,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
 
     def getRequestData(self):
         try :
-            objRequestBody=ujson.loads(self.request.body.decode('utf-8'))
-            #objRequestBody=json.loads(self.request.body.decode('utf-8'))
+            objRequestBody=json.loads(self.request.body.decode('utf-8'))
         except:
             raise BaseError(801) # 参数错误
 
@@ -245,7 +202,7 @@ class WebRequestHandler(tornado.web.RequestHandler):
     def openDB(self):
         db=self.application.db
         self._db_ =db
-        db.open() # open 时 autocommit=False
+        db.open() # open 时 autocommit=True
         return db
     
     def closeDB(self):
@@ -266,34 +223,3 @@ class WebRequestHandler(tornado.web.RequestHandler):
         else :
             time=0
         return time
-    
-
-# 操作异常处理
-def operator_except(func):  
-    #得到操作状态
-    def gen_status(self,*args, **kwargs):  
-        #result = None, None  
-        try:
-            self.init()
-            self.db=self.openDB()
-            #result = func(self,*args, **kwargs)
-            func(self,*args, **kwargs)
-            self.closeDB()
-        except BaseError as e:
-            self.returnErrorInfo(e)                
-        #return result 
-  
-    return gen_status      
-
-# 操作异常处理
-def operator_argumentExcept(func):  
-    #得到操作状态
-    def gen_status(self,*args, **kwargs):  
-        result = None, None  
-        try:
-            result = func(self,*args, **kwargs)
-            func(self,*args, **kwargs)
-        except :
-            raise BaseError(801) # 参数错误
-        return result 
-    return gen_status      

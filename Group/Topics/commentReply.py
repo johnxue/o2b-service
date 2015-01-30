@@ -50,6 +50,7 @@ class Handler(WebRequestHandler):
                 'status'          : status
             }
             rid=db.insert('tbGTCReply',insertData)
+            
             db.close()
             if rid<0 : 
                 # 插入失败后删除成功移动的文件

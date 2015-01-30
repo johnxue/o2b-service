@@ -3,6 +3,7 @@ import config
 from PIL import Image
 from Framework.Base  import WebRequestHandler,BaseError
 from mysql.connector import errors,errorcode
+from  User import entity
 
 # Image包安装： 
 # sudo apt-get install libtiff4-dev libjpeg8-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev tcl8.5-dev tk8.5-dev python-tk  
@@ -221,17 +222,21 @@ class Handler(WebRequestHandler):
                 "filename": rspData['filename'],
             }
             
-            if objData['type']=='header':
+            if objData['type']=='userheader':
                 updateData={
-                    'img_header'  : rspData["filename"],
-                    'updateTime'   : self._now_time_,
+                    'header'  : rspData["filename"],
+                    'updateTime'   : '{{now()}}',
                     'updateUser'   : user
                 }            
                         
                 db=self.openDB()
                 ur=db.updateByPk('tbUser',updateData,user,pk='user')
                 if ur<=0 :BaseError(802) # 没有数据找到
-                self.closeDB()            
+                self.closeDB()
+                
+                u=entity.user()
+                u.saveToRedis('tbUser',{'header':rspData["filename"]},id=user)
+                
             
             self.response(rspData,angluar=False) # 返回查询结果        
 

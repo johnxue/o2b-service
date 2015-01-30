@@ -67,9 +67,9 @@ class user(object) :
     
     def update(self,data,user,db,isCommit=True,isLock=True):
         #1.数据更新到数据库
-        rw=db.updateByPk('tbUser',data,user,pk='user',commit=isCommit,lock=islock)    
+        rw=db.updateByPk('tbUser',data,user,pk='user',commit=isCommit,lock=isLock)    
         
-        if id<0 : raise BaseError(705) # SQL执行错误
+        if rw<0 : raise BaseError(705) # SQL执行错误
 
         #2.数据更新到Redis
         self.rds.save('tbUser',data,id=user)

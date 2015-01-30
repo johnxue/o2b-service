@@ -3,28 +3,57 @@ from mysql.connector import errors,errorcode
 import config
 
 class Handler(WebRequestHandler):
-    def get(self,gid=None):  # 查询圈子的信息，前提是该圈子属于查询用户
-        
+    '''
+        查询所有或指定用户的圈子
+        当查询所有圈子时，只返回所有状态的圈子
+        当查询指定用户的圈子时，将返回用户所创建的所有状态的圈子
+    '''
+    def get(self): 
         try :
             super().get(self)
             
-            user=self.getTokenToUser()        
             # 分页
             offset=int(self.get_argument("o",default=0))
             rowcount=int(self.get_argument("r",default=1000))
+            user=self.get_argument("u",default='')
+            status=(self.get_argument("s",default='')).upper()
+            
+            
             offset=offset*rowcount
+            if user=='' : user=self.getTokenToUser()
             
+                
             db=self.openDB()
-            
-            #1. 查询退换货单；
             conditions={
-                'select' : 'id,name,description,membership，totalTopic',
-                'where' : 'owner="%s"' % (user),
-                'order' : 'id desc',
+                'select' : "gid,name,membership,totalTopic,status_code,status,isVerifyJoin,isPrivate,{{CONCAT('%s/'}},{{header) as header}},cat,owner,createtime" % (config.imageConfig['groupheader']['url']),
                 'limit' : '%s,%s' % (offset,rowcount)
-            }
-            group_list=db.getAllToList('tbGroups',conditions)
+            }            
+            
+            keyName='AllGroups'
+            where={ "{{1}}" : "1" }
+            
+                
+            if user.lower()=='hot': # 热门圈子
+                conditions['order'] = 'active desc'
+                conditions['limit'] = 10
+                keyName='HotGroups'
+            elif user.lower()!='all' :  # 用户指定ID的圈子
+                conditions['select']+= ',notice'
+                conditions['where'] = 'owner="%s"' % (user,)
+                where['owner']=user
 
+                keyName=user + ' Groups'
+ 
+            if status :
+                try :
+                    conditions['where'] = conditions['where'] + (' and ' if conditions['where'] else  '') + "status_code='%s'"%(status,)
+                except :
+                    conditions['where'] = "status_code='%s'"%(status,)
+                where['status_code']=status
+                    
+            intCount=db.count('vwGroupList',where)
+            if intCount==0 : raise BaseError(802) # 没有找到数据                   
+            group_list=db.getAllToList('vwGroupList',conditions)
             self.closeDB()
             
             #2. 错误处理
@@ -32,127 +61,90 @@ class Handler(WebRequestHandler):
                 raise BaseError(802) # 没有找到数据                    
                 
             #3. 打包成json object
-            rows = {'myGroup' : group_list }
+            rows = {
+                'count' : intCount,           
+                keyName : group_list
+            }
             self.response(rows)
-             
         except BaseError as e:
             self.gotoErrorPage(e.code)
-
-
-    def post(self):  # 创建圈子
-        try :
-            super().post(self)
-            user=self.getTokenToUser()        
-        
-            objData=self.getRequestData()
             
-            try :
-                # 圈子信息
-                insertData={
-                    'name'         : objData["name"],                    # 圈子名称
-                    'description'  : objData["desc"],                    # 圈子描述
-                    'category'     : objData["cat"],                     # 圈子分类Code
-                    'cratetime'    : self._now_time_,                    # 创建时间
-                    'owner'        : user,                               # 圈子的所有者
-                    'level'        : '100',                              # 初级
-                    'totalTopic'   : 0,                                  # 总主题数
-                    'totalReply'   : 0,                                  # 总回复数
-                    'lastTime'     : self._now_time_,                    # 最后一次发帖时间
-                    'active'       : 0,                                  # 活跃度
-                    'status'       : 'W',                                # 状态：等待申批
-                    'membership'   : 1  ,                                # 成员数为1
-                    'isPrivate'    : 'Y' if objData["pwd"] else 'N',     # 如果有密码为Y否则为N
-                    'password'     : objData["pwd"],                     # 私有密码
-                    'isDelete'     : 'Y'
-                }
-            except :
-                raise BaseError(801) # 参数错误
-            
-                
-            
-            db=self.openDB()
-            db.begin()
-
-            #1.1 将圈子信息插入 tbGroup;
-            gid=db.insert('tbGroups',insertData,commit=False)
-            
-            if gid<0 : raise BaseError(702) # SQL操作失败
-            
-            #1.2 将用户信息插入到 tbGroupUser；
-            guData = {
-                'user'            : user,
-                'groupid'         : gid,
-                'joinTime'        : self._now_time_,
-                'role'            : 'O',                 # O - 圈子所有者
-                'isDelete'        : 'N'
-            }
-            id = db.insert('tbGroupUser',guData,commit=False)
-
-            ''' 
-            以下代码可以废弃
-            #1.3 将tbUser表中的lastGroup更新为新建圈子的id
-            updateData={
-                'lastGroupId':gid, 
-                'updateTime':self._now_time_,
-                'updateUser':user
-            }
-            db.updateByPk('tbUser',updateData,user,pk='user',commit=False)            
-            '''
-            
-            db.commit()
-            self.closeDB()
-        
-            #3. 打包成json object
-            rows={
-                "group"    : objData["name"],
-                "id"       : gid
-            }
-            
-            '''
-            
-            HMSET 
-            
-            
-            '''
-             
-
-            self.response(rows)
-                        
-        except BaseError as e:
-            self.gotoErrorPage(e.code)
-
-
-    def patch(self):  # 管理圈子
+    def patch(self):  # 设置圈子状态
         try :
             super().post(self)
             user=self.getTokenToUser()        
             objData=self.getRequestData()
             
-            try :
-                
-                # 圈子信息
-                objData={
-                    'gid'       : int(objData["gid"]),               # 圈子id
-                    'operation' : objData["opt"],                    # 圈子操作
+            try:
+                ids=objData['ids']
+                #1.3 将tbUser表中的lastGroup更新为新建圈子的id
+                updateData={
+                    'status'       : objData["s"],                               # 圈子状态
+                    'updateTime'   : '{{now()}}',
+                    'updateUser'   : user
                 }
             except :
                 raise BaseError(801) # 参数错误
             
+            if not updateData['status'] : raise BaseError(801) # 参数错误
+                
             db=self.openDB()
-
-            #1.3 将tbUser表中的lastGroup更新为新建圈子的id
-            updateData={
-                'status':objData['operation'], 
-                'updateTime':self._now_time_,
-                'updateUser':user
-            }
-            ur=db.update('tbGroup',updateData,updateData,{"id":objdata["gid"],"owner":user})      
+            
+            # 判断用户是否用管理员权限
+            if user!=config.Administrator :
+                SELECT={
+                    'select' : 'role',
+                    'where' : 'user="%s" and groupid=%s' % (user,gid),
+                    'limit' : '1'
+                }
+                user_role=db.getAllToObject('tbGroupUser',SELECT)
+                if len(user_role)==0 or user_role[0]['role'] not in 'OS':
+                    raise BaseError(604) # 未授权的访问
+            
+            #ur=db.update('tbGroups',updateData,{"id":objData["gid"],"owner":user})
+            ur=db.updateByPk('tbGroups',updateData,'{{ in (%s)}}'%(ids),pk='id')
             if ur<=0 :BaseError(802) # 没有数据找到
                 
             self.closeDB()
             self.response()
         except BaseError as e:
             self.gotoErrorPage(e.code)
-                        
-    def delete(self):  # 解散圈子,须系统管理员
-        pass
+
+            
+    def delete(self):  # 删除圈子
+        try :
+            super().post(self)
+            user=self.getTokenToUser()        
+            objData=self.getRequestData()
+            
+            try:
+                ids=objData['ids']
+                #1.3 将tbUser表中的lastGroup更新为新建圈子的id
+                updateData={
+                    'isDelete'       : 'Y',           # 删除圈子
+                    'updateTime'   : '{{now()}}',
+                    'updateUser'   : user
+                }
+            except :
+                raise BaseError(801) # 参数错误
+            
+            db=self.openDB()
+            
+            # 判断用户是否用管理员权限
+            if user!=config.Administrator :
+                SELECT={
+                    'select' : 'role',
+                    'where' : 'user="%s" and groupid=%s' % (user,gid),
+                    'limit' : '1'
+                }
+                user_role=db.getAllToObject('tbGroupUser',SELECT)
+                if len(user_role)==0 or user_role[0]['role'] not in 'OS':
+                    raise BaseError(604) # 未授权的访问
+            
+            ur=db.updateByPk('tbGroups',updateData,'{{ in (%s)}}'%(ids),pk='id')
+            if ur<=0 :BaseError(802) # 没有数据找到
+                
+            self.closeDB()
+            self.response()
+        except BaseError as e:
+            self.gotoErrorPage(e.code)
