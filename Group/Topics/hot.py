@@ -29,7 +29,7 @@ class Handler(WebRequestHandler):
 
             #1. 查询圈子的帖子
             hotTopicsSelect={
-                'select' : "id,gid,user,nickname,{{CONCAT('%s/'}},{{header) as header}},topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status" % (config.imageConfig['userheader']['url']),
+                'select' : "id,gid,groupName,user,nickname,{{CONCAT('%s/'}},{{header) as header}},topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status" % (config.imageConfig['userheader']['url']),
                 'where'  : "isNotHot is Null or upper(isNotHot)<>'Y'",
                 'order'  : 'viewCount+replyCount desc',
                 'limit' : '%s,%s' % (offset,rowcount)
@@ -50,7 +50,7 @@ class Handler(WebRequestHandler):
             #3. 打包成json object
             rows = {
                 'count'  : intCountTopic,
-                'struct' : 'id,gid,user,nickname,header,topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status',
+                'struct' : 'id,gid,groupName,user,nickname,header,topic,summary,createTime,viewCount,replyCount,isTop,isEssence,status_code,status',
                 'Topics' : Topics_List
             }
             self.response(rows)
