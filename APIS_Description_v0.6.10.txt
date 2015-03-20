@@ -186,7 +186,7 @@ URI: https://192.168.1.210/o2b/v1.0.0/service/heartbeat
 4.2 产品信息
 
 4.2.1. 获得查询条件：
-    URI: https://192.168.1.210/o2b/v1.0.0/product/attribute 
+    URI: https://192.168.1.210/o2b/v1.0.0/product/attribute 1
     输出：
               {
                  "attribute": [ ["描述":"代码"],["描述":"代码"],...["描述":"代码"] ], 
