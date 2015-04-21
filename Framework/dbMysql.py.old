@@ -1,11 +1,9 @@
 import mysql.connector
 import mysql.connector.pooling 
 import mysql.connector.cursor
-import datetime
 
 from mysql.connector import errorcode
 from Framework.Base  import BaseError
-from config import DEBUG
 
 import logging,config
 
@@ -27,7 +25,7 @@ class CURD(object) :
         self.table = 'tb'+tableName
         self.view  = 'vw'+tableName        
       
-    def find(self,conditions,table=None,isRaise=True):
+    def find(self,conditions,table=None):
         if not table : table=self.view
         
         #1. 查询总数
@@ -42,23 +40,20 @@ class CURD(object) :
         #1.2 存在分页，统计复合条件的总记录数    
         if isLimit :
             try :
-                where = { '':'{{'+conditions['where']+'}}'}
+                where = conditions['where']
             except:
-                where = { "{{1}}" : 1 }
+                where = { "{{1}}" : "1" }
             intCount=self.db.count(table,where)
-
-            if intCount==0 : 
-                raise BaseError(802) if isRaise else pass # 没有找到数据
+            if intCount==0 : raise BaseError(802) # 没有找到数据
             
         #2 得到复合条件的记录
         lstRowsData = self.db.getAllToList(table,conditions)  # 查询结果以List的方式返回  
         
         #2. 错误处理
-        if not lstRowsData : 
-            raise BaseError(802) if isRaise else pass # 未找到数据
+        if not lstRowsData :
+            raise BaseError(802) # 未找到数据
         
         rows = {
-            'struct':conditions['select'],
             'rows' : lstRowsData
         }
         if isLimit : rows['count']=intCount
@@ -243,9 +238,6 @@ class DB(object):
             
             #sql = self.__joinWhere(sql,params,join)
             cursor = self.__getCursor()
-            
-            __display_Debug_IO(sql,tuple(whereValues)) #DEBUG
-            
             cursor.execute(sql,tuple(whereValues))
             #cursor.execute(sql,tuple(params.values()))
             result = cursor.fetchone();
@@ -253,11 +245,7 @@ class DB(object):
         #except:
         #    raise BaseError(707)       
         except  Exception as err:
-            try :
-                raise BaseError(707,err._full_msg)
-            except :
-                raise BaseError(707)
-                
+            raise BaseError(707,err._full_msg)        
 
     def getToListByPk(self,table,criteria={},id=None,pk='id'):
         # 根据条件查找记录返回List
@@ -310,9 +298,6 @@ class DB(object):
             values += ','+funValues if funValues else ''
             sql = 'INSERT INTO `%s` (%s) VALUES (%s)'%(table,fields,values)
             cursor = self.__getCursor()
-            
-            __display_Debug_IO(sql,tuple(newData.values())) #DEBUG
-
             cursor.execute(sql,tuple(newData.values()))
             if commit : self.commit()
             insert_id = cursor.lastrowid
@@ -343,9 +328,6 @@ class DB(object):
                 cursor.execute(sqlSelect,tuple(whereValues))  # 加行锁
                 
             sqlUpdate = "UPDATE `%s` SET %s "% (table,fields) + sqlWhere
-            
-            __display_Debug_IO(sqlUpdate,tuple(values)) #DEBUG
-            
             cursor.execute(sqlUpdate,tuple(values))
 
             if commit : self.commit()
@@ -362,16 +344,10 @@ class DB(object):
     def updateByPk(self,table,data,id,pk='id',commit=True,lock=True):
         # 根据主键更新，默认是id为主键
         return self.update(table,data,{pk:id},commit=commit,lock=lock)
-    
  
     
 # 内部私有的方法 -------------------------------------------------------------------------------------
-
-    def __display_Debug_IO(self,sql,params) :
-        if DEBUG :
-            debug_now_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            print('[S '+debug_now_time+' SQL:] '+(sql % params) if params else sql)
-        
+    
     def __get_connection(self):
         return self.pool.get_connection()
     
@@ -442,9 +418,6 @@ class DB(object):
             '''
             #__contact_where(params,join='AND')
             cursor = self.__getCursor()
-            
-            __display_Debug_IO(sql,params) #DEBUG
-            
             cursor.execute(sql,params)
             
             rows = cursor.fetchall() if all else cursor.fetchone()
@@ -455,10 +428,7 @@ class DB(object):
                 result = [row for row in rows] if all else rows if rows else []
             return result
         except  Exception as err:
-            try :
-                raise BaseError(706,err._full_msg)
-            except :
-                raise BaseError(706)
+            raise BaseError(706,err._full_msg)        
 
             
     def __contact_sql(self,table,criteria,join='AND'):

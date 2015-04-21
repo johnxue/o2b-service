@@ -2,7 +2,7 @@
 # 增加   returnErrorInfo 方法替换旧的 gotoErrorPage方法，新的returnErrorInfo可以返回具体的原始错误信息
 # 将异常处理由 @operator_except 来统一捕获
 
-
+import sys,traceback
 import tornado.web
 import tornado.gen
 import config
@@ -135,7 +135,11 @@ class WebRequestHandler(tornado.web.RequestHandler):
         # 如果存在自定义的错误消息者，替换原消息体
         if error_string!='' :
             error['message']=error_string
-            
+
+        #info=sys.exc_info()  
+        #error['help_document']=info[0]+":"+info[1]  
+        info=traceback.print_exc()
+        
         if help is False :
             try :
                 del error['help_document']
@@ -171,6 +175,8 @@ class WebRequestHandler(tornado.web.RequestHandler):
                 del error['help_document']
             except :
                 pass
+        else :
+            traceback.print_exc()  # 将错误信息在控制台输出
             
         self.response(error,error['status'])
         
@@ -280,7 +286,8 @@ def operator_except(func):
             func(self,*args, **kwargs)
             self.closeDB()
         except BaseError as e:
-            self.returnErrorInfo(e)                
+            # help=True 将显示错误信息
+            self.returnErrorInfo(e,help=True)                
         #return result 
   
     return gen_status      
