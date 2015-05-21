@@ -47,15 +47,15 @@ class CURD(object) :
                 where = { "{{1}}" : 1 }
             intCount=self.db.count(table,where)
 
-            if intCount==0 : 
-                raise BaseError(802) if isRaise else pass # 没有找到数据
+            if intCount==0 and isRaise : 
+                raise BaseError(802) # 没有找到数据
             
         #2 得到复合条件的记录
         lstRowsData = self.db.getAllToList(table,conditions)  # 查询结果以List的方式返回  
         
         #2. 错误处理
-        if not lstRowsData : 
-            raise BaseError(802) if isRaise else pass # 未找到数据
+        if (not lstRowsData) and  isRaise : 
+            raise BaseError(802) # 未找到数据
         
         rows = {
             'struct':conditions['select'],
@@ -64,9 +64,9 @@ class CURD(object) :
         if isLimit : rows['count']=intCount
         return rows
         
-    def save(self,data,ids='',table=None,_commit=False):
+    def save(self,data,ids='',table=None,key='id',_commit=False):
         if ids : 
-            return self.update(data,ids,table,_commit)
+            return self.update(data,ids,table,key,_commit)
         else : 
             return self.add(data, table, _commit)
     
@@ -81,18 +81,28 @@ class CURD(object) :
         return rid
 
        
-    def update(self,data,ids,table=None,_commit=False):
+    def update(self,data,ids,table=None,key='id',_commit=False):
         if not table : table=self.table
         # 根据 ids 数据更新到数据库,多个 id
         #rw=self.db.updateByPk(table,data,rid,commit=_commit)
-        rw=self.db.updateByPk(table,data,'{{ in (%s)}}'%(ids),pk='id',commit=_commit)
+        try :
+            if isinstance(ids, str) and  (',' in ids) :
+                ids="'"+"'".join(ids)+"'"
+        except :
+            pass
+        rw=self.db.updateByPk(table,data,"{{ in (%s)}}"%(ids),pk=key,commit=_commit)
         if rw<0 : raise BaseError(705) # SQL执行错误
         return rw
 
     def delete(self,ids,table=None,key='id',_commit=False):  
         # 根据 ids 删除数据库表的数据,多个 id
         if not table : table=self.table
-        rw=self.db.updateByPk(table,{'isDelete':'Y','updateTime':'{{now()}}'},'{{ in (%s)}}'%(ids),pk=key,commit=_commit) 
+        try :
+            if isinstance(ids, str) and  (',' in ids) :
+                ids="'"+"'".join(ids)+"'"
+        except :
+            pass        
+        rw=self.db.updateByPk(table,{'isDelete':'Y','updateTime':'{{now()}}'},"{{ in ('%s')}}"%(ids),pk=key,commit=_commit) 
         #rw=db.updateByPk(self.table,{'isDelete':'Y','updateTime':'{{now()}}'},id=rid) 
         if rw<0 : raise BaseError(705) # SQL执行错误
         return rw
@@ -244,7 +254,7 @@ class DB(object):
             #sql = self.__joinWhere(sql,params,join)
             cursor = self.__getCursor()
             
-            __display_Debug_IO(sql,tuple(whereValues)) #DEBUG
+            self.__display_Debug_IO(sql,tuple(whereValues)) #DEBUG
             
             cursor.execute(sql,tuple(whereValues))
             #cursor.execute(sql,tuple(params.values()))
@@ -311,7 +321,7 @@ class DB(object):
             sql = 'INSERT INTO `%s` (%s) VALUES (%s)'%(table,fields,values)
             cursor = self.__getCursor()
             
-            __display_Debug_IO(sql,tuple(newData.values())) #DEBUG
+            self.__display_Debug_IO(sql,tuple(newData.values())) #DEBUG
 
             cursor.execute(sql,tuple(newData.values()))
             if commit : self.commit()
@@ -344,7 +354,7 @@ class DB(object):
                 
             sqlUpdate = "UPDATE `%s` SET %s "% (table,fields) + sqlWhere
             
-            __display_Debug_IO(sqlUpdate,tuple(values)) #DEBUG
+            self.__display_Debug_IO(sqlUpdate,tuple(values)) #DEBUG
             
             cursor.execute(sqlUpdate,tuple(values))
 
@@ -443,7 +453,7 @@ class DB(object):
             #__contact_where(params,join='AND')
             cursor = self.__getCursor()
             
-            __display_Debug_IO(sql,params) #DEBUG
+            self.__display_Debug_IO(sql,params) #DEBUG
             
             cursor.execute(sql,params)
             
