@@ -1,10 +1,14 @@
 version = "0.2.0"
-version_info = (0, 2, 0, 2)
+version_info = (0, 2, 0, 3)
 
-# Ver 0,2,0,2
+# Ver 0,2,0,3
 
-# 变更日期： 2015.05.19
-# (1) 修复dbMysql.py update & delete 对ids的判断及处理bug
+# 变更日期： 2015.05.21  0.2.0.3
+# (1) 修复 dbMysql.py __contact_where函数对find中有分页的where = { '':'{{'+conditions['where']+'}}'} 的处理，
+#     处理方法为判断where的key是否为''，如果为空就直接返回后面的conditions
+
+# 变更日期： 2015.05.19 0.2.0.2
+# (1) 完善dbMysql.py update & delete 对ids的判断及处理bug
 
 # 变更日期: 2015.04.21
 # 增强了CURD.save 功能，确保可以按照指定的key值去修改（以前只能按照ID）
